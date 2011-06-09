@@ -4,6 +4,8 @@ import javax.swing.border.LineBorder;
 import pedviz.algorithms.Sugiyama;
 import pedviz.graph.Graph;
 import pedviz.loader.CsvGraphLoader;
+import pedviz.view.DefaultEdgeView;
+import pedviz.view.DefaultNodeView;
 import pedviz.view.GraphView2D;
 import pedviz.view.NodeEvent;
 import pedviz.view.NodeListener;
@@ -57,15 +59,15 @@ public class GUI extends JFrame implements ActionListener {
 		mb.add(fileMenu);
 		setJMenuBar(mb);
 
-		pedigreePanel = new JPanel();
-		pedigreePanel.setPreferredSize(new Dimension(350, 350));
+		pedigreePanel = new JPanel(new BorderLayout());
+		pedigreePanel.setPreferredSize(new Dimension(500, 500));
 		pedigreePanel.setBorder(new LineBorder(Color.BLACK));
 		pedigreePanel.setBackground(Color.WHITE);
-		pedigreePanel.setLayout(new BoxLayout(pedigreePanel, BoxLayout.Y_AXIS));
+		pedigreePanel.setLayout(new BorderLayout());
 		
 		JPanel variantsPanel = new JPanel();
 		
-		variantsPanel.setPreferredSize(new Dimension(700, 350));
+		variantsPanel.setPreferredSize(new Dimension(500, 500));
 		variantsPanel.setBorder(new LineBorder(Color.BLACK));
 		variantsPanel.setBackground(Color.WHITE);
 		
@@ -74,18 +76,18 @@ public class GUI extends JFrame implements ActionListener {
 		mainPanel.add(pedigreePanel);
 		mainPanel.add(variantsPanel);
 		
-		logPanel = new JTextArea();
+		logPanel = new JTextArea("",6,100);
 		logPanel.setEditable(false);
 		logPanel.setFont(new Font("Monospaced",Font.PLAIN,12));
 		logPanel.setLineWrap(true);
 		logPanel.setWrapStyleWord(true);
-        JScrollPane scrollzor = new JScrollPane(logPanel,JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollzor.setSize(new Dimension(1050,100));
-       
+        JScrollPane scrollzor = new JScrollPane(logPanel);
+        scrollzor.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        
         contentPanel = new JPanel();
 		contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
 		contentPanel.add(mainPanel);
-		contentPanel.add(logPanel);
+		contentPanel.add(scrollzor);
 		
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
@@ -171,7 +173,18 @@ public class GUI extends JFrame implements ActionListener {
 		loader.setSettings("Id", "Mid", "Fid");
 		loader.load(graph);
 		
-		Sugiyama s = new Sugiyama(graph);
+		DefaultNodeView n = new DefaultNodeView();
+		n.addHintAttribute("Id");
+		n.addHintAttribute("Mid");
+		n.addHintAttribute("Fid");
+		
+		DefaultEdgeView e = new DefaultEdgeView();
+		e.setWidth(0.0005f);
+		e.setColor(new Color(100,100,100));
+		e.setAlphaForLongLines(0.2f);
+		e.setHighlightedColor(Color.black);
+		
+		Sugiyama s = new Sugiyama(graph, n, e);
 		s.run();
 		
 		GraphView2D view = new GraphView2D(s.getLayoutedGraph());
