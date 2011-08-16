@@ -10,8 +10,11 @@ public class Haplotype {
 		segs = s;
 	}
 
+	public int getSegNum () {
+		return segs.size();
+	}
+	
 	public Enumeration<Segment> getSegments() {
 		return segs.elements();
 	}
-	
 }
