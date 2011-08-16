@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 
+// Class to reformat the input ped format file for use with the pedViz library
 
 public class PedFile {
 	
