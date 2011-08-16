@@ -1,3 +1,8 @@
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
+
+import org.junit.Before;
 import org.junit.Test;
 
 import junit.framework.TestCase;
@@ -5,24 +10,97 @@ import junit.framework.TestCase;
 
 public class TestFlowFile extends TestCase {
 
-	@Test public void testParseFlow() throws Exception {
-		FlowFile flow = new FlowFile("test.flow");
-		
-		assertEquals(16, flow.getIndNum());
+	FlowFile flow;
 	
-		// get the number of markers
-//		assertEquals(74, flow.getMatHap().size());
-//		assertEquals(74, flow.getPatHap().size());
+	@Before public void setUp() throws Exception {
+		flow = new FlowFile("test_files/test.22.flow");
+		MapFile map = new MapFile("test_files/test.22.map");
+		flow.setPos(map.getPositions());
+	}
+	
+	@Test public void testParseFlow() throws Exception {
 		
-		// get a list of matching segements from two inds
-		flow.findMatchingSegments("3002","3502");
-				
-//		assertEquals(3002, flow.getFounderCode('A'));
-//		assertEquals(3002, flow.getFounderCode('B'));
-//		assertEquals(3502, flow.getFounderCode('C'));
-//		assertEquals(3502, flow.getFounderCode('D'));
-//		assertEquals(4510, flow.getFounderCode('E'));
-//		assertEquals(4510, flow.getFounderCode('F'));
-//		assertFalse(flow.getFounderCode('X'));
+		flow.parseFlow();
+		Hashtable<String, Sample> samples = flow.getSamples();
+		
+		assertEquals(16, samples.size());
+		
+		Sample ind1 = samples.get("3000");
+		
+		int matSegNum = ind1.getMat().getSegNum();
+		int patSegNum = ind1.getPat().getSegNum();
+		
+		Enumeration<Segment> ind1Mat = ind1.getMat().getSegments();
+		Enumeration<Segment> ind1Pat = ind1.getPat().getSegments();
+		
+		Segment ind1MatSeg1 = ind1Mat.nextElement();
+		Segment ind1PatSeg1 = ind1Pat.nextElement();
+		
+		int matStart = ind1MatSeg1.getStart();
+		int matEnd   = ind1MatSeg1.getEnd();
+		byte matCode = ind1MatSeg1.getCode();
+		
+		int patStart = ind1PatSeg1.getStart();
+		int patEnd   = ind1PatSeg1.getEnd();
+		byte patCode = ind1PatSeg1.getCode();
+		
+		assertEquals(1, matSegNum);
+		assertEquals(1, patSegNum);
+		
+		assertEquals(15437138, matStart);
+		assertEquals(16317630, matEnd);
+		assertEquals('A', matCode);
+		
+		assertEquals(15437138, patStart);
+		assertEquals(16317630, patEnd);
+		assertEquals('B', patCode);
+		
+		Sample ind2 = samples.get("5065");
+		
+		int matSegNum2 = ind2.getMat().getSegNum();
+		int patSegNum2 = ind2.getPat().getSegNum();
+		
+		Enumeration<Segment> ind2Mat = ind2.getMat().getSegments();
+		Enumeration<Segment> ind2Pat = ind2.getPat().getSegments();
+		
+		Segment ind2MatSeg1 = ind2Mat.nextElement();
+		Segment ind2MatSeg2 = ind2Mat.nextElement();
+		Segment ind2MatSeg3 = ind2Mat.nextElement();
+		Segment ind2PatSeg1 = ind2Pat.nextElement();
+		
+		int matStart2_1 = ind2MatSeg1.getStart();
+		int matEnd2_1   = ind2MatSeg1.getEnd();
+		byte matCode2_1 = ind2MatSeg1.getCode();
+		
+		int matStart2_2 = ind2MatSeg2.getStart();
+		int matEnd2_2   = ind2MatSeg2.getEnd();
+		byte matCode2_2 = ind2MatSeg2.getCode();
+		
+		int matStart2_3 = ind2MatSeg3.getStart();
+		int matEnd2_3   = ind2MatSeg3.getEnd();
+		byte matCode2_3 = ind2MatSeg3.getCode();
+		
+		int patStart2 = ind2PatSeg1.getStart();
+		int patEnd2   = ind2PatSeg1.getEnd();
+		byte patCode2 = ind2PatSeg1.getCode();
+						
+		assertEquals(3, matSegNum2);
+		assertEquals(1, patSegNum2);
+		
+		assertEquals(15437138, matStart2_1);
+		assertEquals(16003408, matEnd2_1);
+		assertEquals('A', matCode2_1);
+		
+		assertEquals(16041178, matStart2_2);
+		assertEquals(16162813, matEnd2_2);
+		assertEquals('C', matCode2_2);
+		
+		assertEquals(16163945, matStart2_3);
+		assertEquals(16317630, matEnd2_3);
+		assertEquals('A', matCode2_3);
+		
+		assertEquals(15437138, patStart2);
+		assertEquals(16317630, patEnd2);
+		assertEquals('G', patCode2);
 	}	
 }
