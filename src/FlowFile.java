@@ -2,83 +2,65 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Vector;
+import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
+
+import org.hamcrest.core.IsNull;
 
 
 public class FlowFile {
 
 	BufferedReader ffr;
-	Hashtable<String, Hashtable> inds;
-	Hashtable<String, String[]> haps;
-	Hashtable<String, String> founders;
-	Hashtable<String, String> founderCodes;
+	Hashtable<String, Sample> individuals;
+	Vector<Integer> positions;
 	
-
 	public FlowFile(String fileName) throws Exception {
 		if (fileName.endsWith(".gz")) {
 			ffr = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(fileName))));
 		} else {
 			ffr = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)));
 		}
-		parseFlow();
 	}
 	
 	public void parseFlow() {
 		String line;
-		inds = new Hashtable<String, Hashtable> ();
+		individuals = new Hashtable<String, Sample> ();
+		Haplotype matHap = null;
+		Haplotype patHap = null;
 		
 		try {
 			while((line=ffr.readLine()) != null) {
-				if (line.startsWith("FAMILY")){
-					// ignore header
-					// can/will there be > 1 family in a file? 
-				} else if (!line.isEmpty()) {
-					String values[] = line.trim().split("\\s+");
-					String ind = values[0];
-					String status = values[1];
-					
-					System.out.println(values);
-					
-					String haps[] = new String[5];
-										
-					System.arraycopy(values, 2, haps, 0, 5);
-					
-					//System.out.println(haps);
-					
-					Hashtable h = inds.get(ind);
-					
-					if (status.contains("FOUNDER")) {
-						System.out.println(status + " founder");
-						//inds.put(ind, haps)
-						// if is the first line it is maternal
-//						inds.get(ind)
-//						if (h == null) {
-//							
-//						} else {
-//							
-//						}
-//						
+				if (!line.isEmpty()) {
+					//assume 1 family per file
+					if (!line.startsWith("FAMILY")){
+
+						String[] codes = line.trim().split("\\s+");
+						String id      = codes[0];
+						String status  = codes[1];
+						Vector<Segment> seg = findSegments(codes);
 						
-					} else if (status.contains("MATERNAL")) {
-						System.out.println(status + " mat");
-					} else {
-						System.out.println(status + " pat");
+						if (status.contains("FOUNDER")) {
+							if(matHap != null) {
+								patHap = new Haplotype(seg);
+							} else {
+								matHap = new Haplotype(seg);
+							}
+						} else if (status.contains("MATERNAL")){
+							matHap = new Haplotype(seg);
+						} else if (status.contains("PATERNAL")) {
+							patHap = new Haplotype(seg);
+						}
+						
+						if (matHap != null && patHap != null) {
+							individuals.put(id, new Sample(matHap, patHap));
+							matHap = null;
+							patHap = null;
+						}
 					}
-					
-					// the first line of a sample is the maternal chromosome
-					
-					// the second line of a sample is the paternal chromosome
-					
-					
-//					MutableInt value = inds.get(ind);
-//					
-//					if (value == null) {
-//					  value = new MutableInt ();
-//					  inds.put (ind, value);
-//					} else {
-//					  value.inc ();
-//					}
 				}
 			}
 		} catch (IOException e) {
@@ -86,32 +68,42 @@ public class FlowFile {
 			e.printStackTrace();
 		}			
 	}
-	
-	// how to return the matching segments?
-	// return array indexes of matching haplotypes
-	
-	
-	public void findMatchingSegments(String ind1, String ind2) {
+
+	private Vector<Segment> findSegments(String[] codes) {
+		Vector<Segment> segs = new Vector<Segment> ();
+		String last  = codes[2];
+		int segStart = getPos(2);
+		int segEnd   = getPos(2);
 		
-//		// get array of haplotypes 
-//		String ind1[] = 
-//		String ind2[] =            
-//		
-//		
-//		if (ind1.length() == ind2.length()) {
-//			for(int i = 0; i < ind1.length(); i++){
-//				// loop through
-//				
-//				
-//				
-//			}
-//		} else {
-//			// error
-//		}
-	}
-	
-	public int getIndNum() {
-		return inds.size();
+		for(int i=3; i<codes.length; i++) {
+			String code = codes[i];
+			if (code.contentEquals(last)) {
+				segEnd = getPos(i);
+			} else {
+				// store the segment
+				segs.add(new Segment(segStart, segEnd, last.getBytes()[0]));
+				//reset the values for the next segment
+				segStart = getPos(i);
+				segEnd   = getPos(i);
+			}
+			last = code;
+		}
+		//last segment
+		segs.add(new Segment(segStart, segEnd, last.getBytes()[0]));
+		return segs;
 	}
 
+	private int getPos(int i) {
+		//offset for the two extra columns in the flow file id and status
+		return positions.get(i-2);
+	}
+
+	public Hashtable<String, Sample> getSamples() {
+		return individuals;
+	}
+
+	public void setPos(Vector<Integer> vector) {
+		positions = vector;
+	}
+	
 }
