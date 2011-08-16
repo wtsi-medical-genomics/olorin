@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -15,16 +16,18 @@ public class VCF {
 	Hashtable<Integer, Hashtable> vcfVariants;
 	int variantTotal;
 	int flaggedTotal;
-	boolean open = false;
 	
+	//header values
+	
+	VCFMeta meta;
+	ArrayList<String> inds;
 	
 	public VCF(final String fileName) throws Exception {
 		File vcfIndex = new File(fileName + ".tbi");
 		if (fileName.endsWith("gz")) {
 			if (vcfIndex.exists()) {
 				tabixVCF = new TabixReader(fileName);
-				this.parseVariants();
-				open = true;
+				this.parseHeader();
 			} else {
 				throw new Exception("VCF needs to be indexed using tabix");
 			}
@@ -32,7 +35,43 @@ public class VCF {
 			throw new Exception("VCF needs to be compressed using bgzip");
 		}
 	}
+	
+	
+	// the minimum meta info for a vcf header is the fileformat and the the header line
+	// die "Not a valid VCF" unless the input vcf has at least these two lines 
+	
+	private void parseHeader() throws IOException {
+		String line = tabixVCF.readLine();
+		while(line.startsWith("#")) {
+			meta.add(line);
+			line = tabixVCF.readLine();
+		}
+		
+		// check that the file has a fileformat and a header line and is therefore valid  
 
+	}
+	
+	// for testing
+	public int parseHeader(String test) throws IOException {
+		int lineCount = 0;
+		String line = tabixVCF.readLine();
+		while(line.startsWith("#")) {
+			meta.add(line);
+			lineCount++;
+			line = tabixVCF.readLine();
+		}
+		return(lineCount);
+	}
+	
+	//change parseVariants to work on an iterator returned by tabixreader rather than the whole file
+	//pass a list of segments
+	//loop through all the segments
+	//foreach segment use tabix reader to get the line of the vcf
+	//parse these lines and add the variants to the single hashtable
+	
+	//tabix the freq file and when variants in the VCF are pulled out pull out the freqs for the same region
+	// and filter just the variants needed
+	
 	private void parseVariants() throws IOException {
 		vcfVariants = new Hashtable();
 		String line;
@@ -138,12 +177,26 @@ public class VCF {
 			}		 	
 		}
 	}
+	
+//	public String getFileFormat() {
+//		return meta.getFileFormat;
+//	}
+	
+	public VCFMeta getMeta() {
+		return meta;
+	}
+
+	public ArrayList<String> getInds() {
+		return inds;
+	}
 		
 	public int getFlaggedTotal() {
 		return flaggedTotal;
 	}
 	
 	public int getVariantTotal() {
+		//this should return an exception if the vcf has not been parsed
+		
 		int variantTotal = 0;
 		Enumeration<Integer> e = vcfVariants.keys();
 		
