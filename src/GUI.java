@@ -3,12 +3,15 @@ import javax.swing.border.LineBorder;
 
 import pedviz.algorithms.Sugiyama;
 import pedviz.graph.Graph;
+import pedviz.graph.Node;
 import pedviz.loader.CsvGraphLoader;
 import pedviz.view.DefaultEdgeView;
 import pedviz.view.DefaultNodeView;
+import pedviz.view.GraphView;
 import pedviz.view.GraphView2D;
 import pedviz.view.NodeEvent;
 import pedviz.view.NodeListener;
+import pedviz.view.NodeView;
 import pedviz.view.rules.ColorRule;
 import pedviz.view.rules.ShapeRule;
 import pedviz.view.symbols.SymbolSexFemale;
@@ -19,14 +22,19 @@ import java.awt.event.*;
 import java.awt.*;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.ArrayList;
+import java.util.Hashtable;
 
 public class GUI extends JFrame implements ActionListener {
 	
 	JFileChooser jfc;
+	DataDirectory data;
 	ProgressMonitor pm;
 	
 	JPanel pedigreePanel;
+	JPanel variantsPanel;
 	JPanel contentPanel;
+	JSplitPane mainPane;
 	JTextArea logPanel;
 	
 	// for initial vcf filtering
@@ -34,8 +42,16 @@ public class GUI extends JFrame implements ActionListener {
 	Double commonCutoff = 0.05;
 	
 	private JMenu fileMenu;
+	private JMenu toolMenu;
 	private JMenuItem openDirectory;
-		
+	private JMenuItem findSegments;
+	
+	// initialise a global arraylist that will hold all the selected ids from the pedigree
+	private Hashtable<String, Integer> filterList = new Hashtable<String, Integer>();
+	
+	FlowFile flow;
+	
+	
 	public static void main(String[] args) {
 
 		new GUI();
@@ -57,37 +73,54 @@ public class GUI extends JFrame implements ActionListener {
 		fileMenu.add(openDirectory);
 		
 		mb.add(fileMenu);
+		
+		toolMenu = new JMenu("Tools");
+		findSegments = new JMenuItem("Find Segments");
+		findSegments.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,menumask));
+		findSegments.addActionListener(this);
+		findSegments.setEnabled(false);
+		toolMenu.add(findSegments);
+		
+		mb.add(fileMenu);
+		mb.add(toolMenu);
 		setJMenuBar(mb);
 
-		pedigreePanel = new JPanel(new BorderLayout());
-		pedigreePanel.setPreferredSize(new Dimension(500, 500));
+		pedigreePanel = new JPanel();
 		pedigreePanel.setBorder(new LineBorder(Color.BLACK));
 		pedigreePanel.setBackground(Color.WHITE);
 		pedigreePanel.setLayout(new BorderLayout());
 		
-		JPanel variantsPanel = new JPanel();
-		
-		variantsPanel.setPreferredSize(new Dimension(500, 500));
+		variantsPanel = new JPanel();
 		variantsPanel.setBorder(new LineBorder(Color.BLACK));
 		variantsPanel.setBackground(Color.WHITE);
+
+        //Provide minimum sizes for the components
+		Dimension minSize = new Dimension(100, 50);
+		pedigreePanel.setMinimumSize(minSize);
+		variantsPanel.setMinimumSize(minSize);
+		//Provide prefered sizes for the components
+		Dimension prefSize = new Dimension(500,500);
+		pedigreePanel.setPreferredSize(prefSize);
+		variantsPanel.setPreferredSize(prefSize);
 		
-		JPanel mainPanel = new JPanel();
-		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS));
-		mainPanel.add(pedigreePanel);
-		mainPanel.add(variantsPanel);
-		
-		logPanel = new JTextArea("",6,100);
+		//Create a split pane with the two scroll panes in it.
+		mainPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, pedigreePanel, variantsPanel);
+		mainPane.setOneTouchExpandable(true);
+		mainPane.setDividerLocation(500);
+
+		// the log panel seems to be throwing the splitpane off for some reason
+		logPanel = new JTextArea();
 		logPanel.setEditable(false);
 		logPanel.setFont(new Font("Monospaced",Font.PLAIN,12));
 		logPanel.setLineWrap(true);
 		logPanel.setWrapStyleWord(true);
-        JScrollPane scrollzor = new JScrollPane(logPanel);
-        scrollzor.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        
+        JScrollPane scrollPane = new JScrollPane(logPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+
         contentPanel = new JPanel();
 		contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-		contentPanel.add(mainPanel);
-		contentPanel.add(scrollzor);
+		contentPanel.add(mainPane);
+		contentPanel.add(scrollPane);
 		
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
@@ -108,53 +141,7 @@ public class GUI extends JFrame implements ActionListener {
 				try {
 					this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 					try {						
-						// create a data directory class to hold all these files like evoker
-						File directory = new File(jfc.getSelectedFile().getAbsolutePath());
-						File[] vcfFiles  = directory.listFiles(new ExtensionFilter(".vcf.gz"));
-						File[] flowFiles = directory.listFiles(new ExtensionFilter(".flow"));
-						File[] pedFiles  = directory.listFiles(new ExtensionFilter(".ped"));
-				        
-						if (vcfFiles.length > 1) {
-							printLog("Error: multiple vcf files found");
-						} else if (vcfFiles.length < 1) {
-							printLog("Error: no vcf file found");	
-						} else {
-							File vcfFile = vcfFiles[0];
-							VCF vcf = null;
-							try {
-								vcf = new VCF(vcfFile.getAbsolutePath());
-							} catch (Exception e) {
-								printLog(e.getMessage());
-							}
-							if (vcf.open) {
-								printLog("Found VCF: " + vcfFile.getAbsolutePath());
-								printLog("Processed VCF: found " + vcf.getVariantTotal() + " variants");
-								vcf.flagCommon(freqFile, commonCutoff);
-								printLog("Removed " + vcf.getFlaggedTotal() + " common variants (" + commonCutoff + ")");
-							}
-						}
-
-						if (flowFiles.length > 1) {
-							printLog("Error: multiple flow files found");
-						} else if (flowFiles.length < 1) {
-							printLog("Error: no ped file found");
-						} else {
-							File flowFile = flowFiles[0];
-							FlowFile flow = new FlowFile(flowFile.getAbsolutePath());
-							printLog("Found flow: " + flowFile.getAbsolutePath());
-						}
-						
-						if (pedFiles.length > 1) {
-							printLog("Error: multiple ped files found");
-						} else if (pedFiles.length < 1) {
-							printLog("Error: no ped file found");
-						} else {
-							File pedFile = pedFiles[0];
-							PedFile ped = new PedFile(pedFile.getAbsolutePath());
-							printLog("Found ped: " + pedFile.getAbsolutePath());
-							String csvFile = ped.makeCSV();
-							drawPedigree(csvFile);
-						}
+						data = new DataDirectory(jfc.getSelectedFile().getAbsolutePath());
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -177,12 +164,14 @@ public class GUI extends JFrame implements ActionListener {
 		n.addHintAttribute("Id");
 		n.addHintAttribute("Mid");
 		n.addHintAttribute("Fid");
+		n.setBorderWidth(0.1f);
 		
 		DefaultEdgeView e = new DefaultEdgeView();
 		e.setWidth(0.0005f);
 		e.setColor(new Color(100,100,100));
 		e.setAlphaForLongLines(0.2f);
 		e.setHighlightedColor(Color.black);
+		e.setConnectChildren(true);
 		
 		Sugiyama s = new Sugiyama(graph, n, e);
 		s.run();
@@ -190,20 +179,30 @@ public class GUI extends JFrame implements ActionListener {
 		GraphView2D view = new GraphView2D(s.getLayoutedGraph());
 		view.addRule(new ColorRule("aff", "1",  Color.black));
 		view.addRule(new ColorRule("aff", "2",  Color.red));
-		view.addRule(new ShapeRule("Sex",  "1",  new SymbolSexFemale()));
-		view.addRule(new ShapeRule("Sex",  "2",  new SymbolSexMale()));
-		view.addRule(new ShapeRule("Sex",  "-1", new SymbolSexUndesignated()));
+		view.addRule(new ShapeRule("Sex", "1",  new SymbolSexFemale()));
+		view.addRule(new ShapeRule("Sex", "2",  new SymbolSexMale()));
+		view.addRule(new ShapeRule("Sex", "-1", new SymbolSexUndesignated()));
 		view.setSelectionEnabled(true);
 		view.addNodeListener(
 				new NodeListener() {
 					public void onNodeEvent(NodeEvent event) {
-						switch (event.getType()) {
-						case NodeEvent.DESELECTED:
-							printLog("Node deselected");
-							break;
-						case NodeEvent.SELECTED:
-							printLog("Node selected");
-							break;
+						if (event.getType() == NodeEvent.DESELECTED || event.getType() == NodeEvent.SELECTED) {
+							String idSelected = (String) event.getNode().getId();
+							GraphView graph = event.getGraphView();
+							Node node = event.getNode();
+							NodeView nodeView = event.getNodeView();
+							if (filterList.containsKey(idSelected)) {
+								filterList.remove(idSelected);
+								printLog("Removed " + idSelected);
+								nodeView.setBorderWidth(0.1f);
+								nodeView.setBorderColor(Color.black);
+							} else {
+								filterList.put(idSelected, 1);
+								printLog("Selected" + idSelected);
+								//highlight the node
+								nodeView.setBorderWidth(1);
+								nodeView.setBorderColor(Color.green);
+							}
 						}
 					}
 				}	
@@ -218,16 +217,4 @@ public class GUI extends JFrame implements ActionListener {
 		logPanel.append(text+"\n");
     }
 	
-	class ExtensionFilter implements FilenameFilter{
-
-		String extension;
-
-		ExtensionFilter(String extension){
-			this.extension = extension;
-		}
-
-		public boolean accept(File file, String string) {
-			return string.endsWith(extension);
-		}
-	}
 }
