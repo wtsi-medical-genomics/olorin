@@ -10,7 +10,7 @@ public class SegmentMatch extends Segment {
 		ids = i;
 	}
 	
-	public Vector<String> getIDs () {
+	public Vector<String> getIds () {
 		return ids;
 	}
 

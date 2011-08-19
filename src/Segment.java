@@ -22,4 +22,5 @@ public class Segment {
 	public byte getCode() {
 		return code;
 	}
+	
 }

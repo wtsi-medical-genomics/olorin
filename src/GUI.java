@@ -142,6 +142,9 @@ public class GUI extends JFrame implements ActionListener {
 					this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 					try {						
 						data = new DataDirectory(jfc.getSelectedFile().getAbsolutePath());
+						
+						drawPedigree(data.pedvizFile);
+						
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

@@ -4,16 +4,61 @@ import java.util.Vector;
 
 public class SampleCompare {
 
-	Vector<Segment> results;
+	Vector<SegmentMatch> results;
 	
 	public SampleCompare(Sample a, Sample b) {
-		//loop through the possible comparisons 
-		Vector<SegmentMatch> comp1 = this.compare(a.getMat(), b.getMat());
-		Vector<SegmentMatch> comp2 = this.compare(a.getPat(), b.getPat());
-		Vector<SegmentMatch> comp3 = this.compare(a.getMat(), b.getPat());
-		Vector<SegmentMatch> comp4 = this.compare(a.getPat(), b.getMat());
 		
-		results = new Vector<Segment> ();
+		
+		
+	}
+	
+	public SampleCompare(Vector<Sample> selected) {
+		
+
+		// compare these two and get back the results
+		// if there are two more 
+		
+		// for each chromosome
+		Vector<Vector<SegmentMatch>> matches = new Vector<Vector<SegmentMatch>> ();
+		Enumeration<Sample> e = selected.elements();
+		while (e.hasMoreElements()) {
+			// pull off the first two samples from the vector
+			Sample a = e.nextElement();
+			if (e.hasMoreElements()) {
+				Sample b = e.nextElement();
+				matches.add(compareSamples(a, b));
+			} else {
+				//only one sample not sure what to do here
+			}
+		}
+		
+		// now process the matched until there is only one set of segment matches
+		if (matches.size() > 1) {
+			
+			
+			
+			
+			
+		} else {
+			// zero or 1 vectors so return matches
+		} 
+		
+	}
+	
+	public Vector<SegmentMatch> compareSamples (Sample a, Sample b) {
+		
+		Vector<String> ids = new Vector<String> ();
+		ids.add(a.getId());
+		ids.add(b.getId());
+				
+		//loop through the possible comparisons 
+		Vector<SegmentMatch> comp1 = this.compare(a.getMat(), b.getMat(), ids);
+		Vector<SegmentMatch> comp2 = this.compare(a.getPat(), b.getPat(), ids);
+		Vector<SegmentMatch> comp3 = this.compare(a.getMat(), b.getPat(), ids);
+		Vector<SegmentMatch> comp4 = this.compare(a.getPat(), b.getMat(), ids);
+		
+		results = new Vector<SegmentMatch> ();
+		
 		if(comp1.size() > 0){
 			results.addAll(comp1);
 		}
@@ -26,11 +71,43 @@ public class SampleCompare {
 		if(comp4.size() > 0){
 			results.addAll(comp4);
 		}
+		
+		return results;
+		
 	}
 	
-	public Vector<SegmentMatch> compare(Haplotype a, Haplotype b, String aId, String bId) {
-		Vector<SegmentMatch> matches = new Vector();
+	public Vector<SegmentMatch> compareMulti (Vector<Sample> samples){
+		Vector<Enumeration> segArrays;
+		Vector<String> ids;
+		for (Sample s : samples){
+			//we might want to track that one of these is mat, one is pat, but right now I don't care
+			segArrays.add(s.getMatHap());
+			ids.add(s.getId());
+			segArrays.add(s.getPatHap());
+			ids.add(s.getId());
+		}
+		
+		Vector<Segment> currentSegs;
+		while (moreToCome(segArrays)){
+			//currentMatchStart, currentMatchStop
+			for (Segment seg : currentSegs){
+				
+			}
+		}
+	}
+	
+	private boolean moreToCome(Vector<Enumeration> segArrays){
+		boolean r = false;
+		for (Enumeration e : segArrays){
+			//check if this should be single bar or double bar
+			r = (r || e.hasMoreElements());
+		}
+		return r;
+	}
 
+	public Vector<SegmentMatch> compare(Haplotype a, Haplotype b, Vector<String> ids) {
+		Vector<SegmentMatch> matches = new Vector<SegmentMatch> ();
+		
 		Enumeration<Segment> hapASegs = a.getSegments();
 		Enumeration<Segment> hapBSegs = b.getSegments();
 
@@ -61,7 +138,7 @@ public class SampleCompare {
 							end = currentSegB.getEnd();
 						}
 
-						matches.add(new SegmentMatch(start,end,currentSegA.getCode(),aId,bId)); 
+						matches.add(new SegmentMatch(start,end,currentSegA.getCode(), ids)); 
 					}
 				}				
 				
@@ -92,14 +169,14 @@ public class SampleCompare {
 						end = currentSegB.getEnd();
 					}
 
-					matches.add(new Segment(start,end,currentSegA.getCode())); 
+					matches.add(new SegmentMatch(start,end,currentSegA.getCode(), ids)); 
 				}
 			}
 		}
 		return matches;
 	}
 	
-	public Vector<Segment> getResults() {
+	public Vector<SegmentMatch> getResults() {
 		return results;
 	}
 	

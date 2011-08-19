@@ -56,7 +56,7 @@ public class FlowFile {
 						}
 						
 						if (matHap != null && patHap != null) {
-							individuals.put(id, new Sample(matHap, patHap));
+							individuals.put(id, new Sample(matHap, patHap, id));
 							matHap = null;
 							patHap = null;
 						}
