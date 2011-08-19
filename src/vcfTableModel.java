@@ -4,21 +4,9 @@ import javax.swing.table.AbstractTableModel;
 
 
 class vcfTableModel extends AbstractTableModel {
-    public ArrayList<String> columnNames = new ArrayList();
-    columnNames.add("CHROM");
-    columnNames.add("POS");
-    columnNames.add("ID");
-    columnNames.add("REF");
-    columnNames.add("ALT");
-    columnNames.add("QUAL");
-    columnNames.add("FILTER");
-    private VCF data;
-
-    
-    
-    public void addColumnName(String s) {
-    	columnNames.add(s);
-    }
+	private VCF vcf;
+	
+	public Vector<String> columnNames = vcf.getMeta().getCols;
     
     public int getColumnCount() {
         return columnNames.size();
