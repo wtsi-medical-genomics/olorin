@@ -1,32 +1,37 @@
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Vector;
 
 
 public class Sample {
 
-	// for the moment just work with a single chromosome
-	public Haplotype matHap;
-	public Haplotype patHap;
+	public Hashtable<String, Chromosome> chr = new Hashtable<String, Chromosome> ();
 	public String id;
 	
-	public Sample(Haplotype m, Haplotype p, String i) {
-		matHap = m;
-		patHap = p;
-		id = i;
+	public Sample(String c, Chromosome s) {
+		chr.put(c, s);
 	}
 
 	public Sample() {
 
 	}
 
-	public Haplotype getMat() {
-		return matHap;
+	public Chromosome getChr (String c) {
+		return chr.get(c);
 	}
-
-	public Haplotype getPat() {
-		return patHap;
+	
+	public void setChr (String c, Chromosome s) {
+		chr.put(c, s);
 	}
 	
 	public String getId() {
 		return id;
+	}
+	
+	public Enumeration<String> getChromosomes () {
+		return chr.keys();
 	}
 	
 }
