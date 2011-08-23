@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -15,7 +16,7 @@ import org.hamcrest.core.IsNull;
 public class FlowFile {
 
 	BufferedReader ffr;
-	Hashtable<String, Sample> individuals;
+	Hashtable<String, Chromosome> individuals;
 	Vector<Integer> positions;
 	
 	public FlowFile(String fileName) throws Exception {
@@ -28,35 +29,34 @@ public class FlowFile {
 	
 	public void parseFlow() {
 		String line;
-		individuals = new Hashtable<String, Sample> ();
-		Haplotype matHap = null;
-		Haplotype patHap = null;
+		individuals = new Hashtable<String, Chromosome> ();
+		ArrayList<Segment> matHap = null;
+		ArrayList<Segment> patHap = null;
 		
 		try {
 			while((line=ffr.readLine()) != null) {
 				if (!line.isEmpty()) {
 					//assume 1 family per file
 					if (!line.startsWith("FAMILY")){
-
 						String[] codes = line.trim().split("\\s+");
 						String id      = codes[0];
 						String status  = codes[1];
-						Vector<Segment> seg = findSegments(codes);
+						ArrayList<Segment> seg = findSegments(codes);
 						
 						if (status.contains("FOUNDER")) {
 							if(matHap != null) {
-								patHap = new Haplotype(seg);
+								patHap = seg;
 							} else {
-								matHap = new Haplotype(seg);
+								matHap = seg;
 							}
 						} else if (status.contains("MATERNAL")){
-							matHap = new Haplotype(seg);
+							matHap = seg;
 						} else if (status.contains("PATERNAL")) {
-							patHap = new Haplotype(seg);
+							patHap = seg;
 						}
 						
 						if (matHap != null && patHap != null) {
-							individuals.put(id, new Sample(matHap, patHap, id));
+							individuals.put(id, new Chromosome(matHap, patHap));
 							matHap = null;
 							patHap = null;
 						}
@@ -69,8 +69,9 @@ public class FlowFile {
 		}			
 	}
 
-	private Vector<Segment> findSegments(String[] codes) {
-		Vector<Segment> segs = new Vector<Segment> ();
+	private ArrayList<Segment> findSegments(String[] codes) {
+		ArrayList<Segment> segs = new ArrayList<Segment> ();
+		String id    = codes[0];
 		String last  = codes[2];
 		int segStart = getPos(2);
 		int segEnd   = getPos(2);
@@ -81,7 +82,7 @@ public class FlowFile {
 				segEnd = getPos(i);
 			} else {
 				// store the segment
-				segs.add(new Segment(segStart, segEnd, last.getBytes()[0]));
+				segs.add(new Segment(segStart, segEnd, last.getBytes(), id));
 				//reset the values for the next segment
 				segStart = getPos(i);
 				segEnd   = getPos(i);
@@ -89,7 +90,7 @@ public class FlowFile {
 			last = code;
 		}
 		//last segment
-		segs.add(new Segment(segStart, segEnd, last.getBytes()[0]));
+		segs.add(new Segment(segStart, segEnd, last.getBytes(), id));
 		return segs;
 	}
 
@@ -98,7 +99,7 @@ public class FlowFile {
 		return positions.get(i-2);
 	}
 
-	public Hashtable<String, Sample> getSamples() {
+	public Hashtable<String, Chromosome> getSamples() {
 		return individuals;
 	}
 
