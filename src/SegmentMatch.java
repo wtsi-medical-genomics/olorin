@@ -1,17 +1,24 @@
+import java.util.ArrayList;
 import java.util.Vector;
 
 
 public class SegmentMatch extends Segment {
 
-	Vector<String> ids;
+	ArrayList<Integer> ids;
+	String chr;
 	
-	public SegmentMatch(int s, int e, byte c, Vector<String> i) {
-		super(s, e, c);
-		ids = i;
+	public SegmentMatch(String c, int s, int e, byte[] bs, ArrayList<Integer> d) {
+		super(s, e, bs);
+		ids = d;
+		chr = c;
 	}
 	
-	public Vector<String> getIds () {
+	public ArrayList<Integer> getIds () {
 		return ids;
 	}
 
+	public String getChr () {
+		return chr;
+	}
+	
 }
