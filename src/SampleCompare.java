@@ -1,183 +1,172 @@
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Vector;
 
 
 public class SampleCompare {
 
-	Vector<SegmentMatch> results;
-	
-	public SampleCompare(Sample a, Sample b) {
-		
-		
-		
-	}
-	
-	public SampleCompare(Vector<Sample> selected) {
-		
+	public SampleCompare() {
 
-		// compare these two and get back the results
-		// if there are two more 
-		
-		// for each chromosome
-		Vector<Vector<SegmentMatch>> matches = new Vector<Vector<SegmentMatch>> ();
-		Enumeration<Sample> e = selected.elements();
-		while (e.hasMoreElements()) {
-			// pull off the first two samples from the vector
-			Sample a = e.nextElement();
-			if (e.hasMoreElements()) {
-				Sample b = e.nextElement();
-				matches.add(compareSamples(a, b));
-			} else {
-				//only one sample not sure what to do here
+	}
+
+	public Collection<SegmentMatch> compareMulti (ArrayList<Sample> samples){
+		ArrayList <SegmentMatch> allMatches = new ArrayList<SegmentMatch> ();  
+		Enumeration<String> i = samples.get(0).getChromosomes();
+		while (i.hasMoreElements()) {
+			String chr = i.nextElement();
+			ArrayList<Iterator> segArrays = new ArrayList<Iterator> ();
+			for (Sample s : samples){
+				//we might want to track that one of these is mat, one is pat, but right now I don't care
+				segArrays.add(s.getChr(chr).getMatIt());
+				segArrays.add(s.getChr(chr).getPatIt());
 			}
+			allMatches.addAll(compareChr(segArrays, chr));
 		}
-		
-		// now process the matched until there is only one set of segment matches
-		if (matches.size() > 1) {
-			
-			
-			
-			
-			
-		} else {
-			// zero or 1 vectors so return matches
-		} 
-		
+		return allMatches;
 	}
 	
-	public Vector<SegmentMatch> compareSamples (Sample a, Sample b) {
-		
-		Vector<String> ids = new Vector<String> ();
-		ids.add(a.getId());
-		ids.add(b.getId());
-				
-		//loop through the possible comparisons 
-		Vector<SegmentMatch> comp1 = this.compare(a.getMat(), b.getMat(), ids);
-		Vector<SegmentMatch> comp2 = this.compare(a.getPat(), b.getPat(), ids);
-		Vector<SegmentMatch> comp3 = this.compare(a.getMat(), b.getPat(), ids);
-		Vector<SegmentMatch> comp4 = this.compare(a.getPat(), b.getMat(), ids);
-		
-		results = new Vector<SegmentMatch> ();
-		
-		if(comp1.size() > 0){
-			results.addAll(comp1);
-		}
-		if(comp2.size() > 0){
-			results.addAll(comp2);
-		}
-		if(comp3.size() > 0){
-			results.addAll(comp3);
-		}
-		if(comp4.size() > 0){
-			results.addAll(comp4);
-		}
-		
-		return results;
-		
-	}
-	
-	public Vector<SegmentMatch> compareMulti (Vector<Sample> samples){
-		Vector<Enumeration> segArrays;
-		Vector<String> ids;
-		for (Sample s : samples){
-			//we might want to track that one of these is mat, one is pat, but right now I don't care
-			segArrays.add(s.getMatHap());
-			ids.add(s.getId());
-			segArrays.add(s.getPatHap());
-			ids.add(s.getId());
-		}
-		
-		Vector<Segment> currentSegs;
+	private  Collection<SegmentMatch> compareChr (ArrayList<Iterator> segArrays, String chr) {
+		Hashtable<String, SegmentMatch> matches = new Hashtable<String, SegmentMatch> ();
+		ArrayList<Segment> currentSegs = new ArrayList<Segment> ();
 		while (moreToCome(segArrays)){
-			//currentMatchStart, currentMatchStop
-			for (Segment seg : currentSegs){
-				
+			if (currentSegs.size() == 0) {
+				//This is the first entrance into the loop, so just pull out the first seg from each and continue
+				for (Iterator i : segArrays) {
+					currentSegs.add((Segment) i.next());
+					i.remove();
+				}
+				//check if the first segments overlap and codes match
+				ArrayList<String> endpoints = getEndpoints(currentSegs);
+				Hashtable<String, ArrayList<ArrayList>> codes = findOverlaps(endpoints);
+				Enumeration<String> overlaps = codes.keys();
+				while (overlaps.hasMoreElements()) {
+					String s = overlaps.nextElement();
+					//if the count of any of the codes is > 1 then there is an overlapping segment with matching codes
+					if (codes.get(s).get(0).size() > 1) {
+						ArrayList<Integer> startPos = codes.get(s).get(0);
+						ArrayList<Integer> endPos = codes.get(s).get(1);
+						ArrayList<Integer> ids = codes.get(s).get(2);
+						Integer segStart = startPos.get(startPos.size()-1);
+						Integer segEnd = endPos.get(0);
+						// how do we stop matches between the same sample?
+						// check that all the elements in the ids array are unique?
+						if (!matches.containsKey(s+segStart+segEnd+ids.toString())) {
+							matches.put(s+segStart+segEnd+ids.toString(), new SegmentMatch(chr, segStart,segEnd, s.getBytes(), ids));
+						}
+					}	
+				}
+				continue;
 			}
-		}
+			ArrayList endVals = new ArrayList ();
+			for (Segment s : currentSegs) {
+				endVals.add(s.getEnd());
+			}
+			int endsFirstIndex = endVals.indexOf(Collections.min(endVals));
+			currentSegs.remove(endsFirstIndex);
+			currentSegs.add(endsFirstIndex, (Segment) segArrays.get(endsFirstIndex).next());
+			segArrays.get(endsFirstIndex).remove();
+			ArrayList<String> endpoints = getEndpoints(currentSegs);
+			Hashtable<String, ArrayList<ArrayList>> codes = findOverlaps(endpoints);
+			Enumeration<String> overlaps = codes.keys();
+			while (overlaps.hasMoreElements()) {
+				String s = overlaps.nextElement();
+				//if the count of any of the codes is > 1 then there is an overlapping segment with matching codes
+				if (codes.get(s).get(0).size() > 1) {
+					ArrayList<Integer> startPos = codes.get(s).get(0);
+					ArrayList<Integer> endPos = codes.get(s).get(1);
+					ArrayList<Integer> ids = codes.get(s).get(2);
+					Integer segStart = startPos.get(startPos.size()-1);
+					Integer segEnd = endPos.get(0);
+					// how do we stop matches between the same sample?
+					// check that all the elements in the ids array are unique?
+					if (!matches.containsKey(s+segStart+segEnd+ids.toString())) {
+						matches.put(s+segStart+segEnd+ids.toString(), new SegmentMatch(chr, segStart,segEnd, s.getBytes(), ids));
+					}
+				}	
+			}	
+		} 
+		return matches.values();
 	}
-	
-	private boolean moreToCome(Vector<Enumeration> segArrays){
+
+	private boolean moreToCome(ArrayList<Iterator> segArrays){
 		boolean r = false;
-		for (Enumeration e : segArrays){
-			//check if this should be single bar or double bar
-			r = (r || e.hasMoreElements());
+		for (Iterator i : segArrays){
+			if (i.hasNext()) {
+				return true;
+			}
 		}
 		return r;
 	}
 
-	public Vector<SegmentMatch> compare(Haplotype a, Haplotype b, Vector<String> ids) {
-		Vector<SegmentMatch> matches = new Vector<SegmentMatch> ();
-		
-		Enumeration<Segment> hapASegs = a.getSegments();
-		Enumeration<Segment> hapBSegs = b.getSegments();
+	private ArrayList<String> getEndpoints(ArrayList<Segment> currentSegs) {
+		ArrayList<String> endpoints = new ArrayList();
+		for (Segment s : currentSegs) {
+			// java this up by storing object not strings
+			endpoints.add(s.getStart()+"-S-"+s.getCodeString()+"-"+s.getId());
+			endpoints.add(s.getEnd()+"-E-"+s.getCodeString()+"-"+s.getId());
+		}
+		//override the sort function to work with objects
+		Collections.sort(endpoints);
+		return endpoints;
+	}
 
-		Segment currentSegA = null;
-		Segment currentSegB = null;
-		while (hapASegs.hasMoreElements() || hapBSegs.hasMoreElements()){
+	private Hashtable<String, ArrayList<ArrayList>> findOverlaps (ArrayList<String> endpoints) {
 
-			if (currentSegA == null){
-				//This is the first entrance into the loop, so just pull out the first seg from each and continue
-				currentSegA = hapASegs.nextElement();
-				currentSegB = hapBSegs.nextElement();
-				
-				if ((currentSegA.getStart() >= currentSegB.getStart() && currentSegA.getStart() <= currentSegB.getEnd()) ||
-						(currentSegA.getEnd() >= currentSegB.getStart() && currentSegA.getEnd() <= currentSegB.getEnd()) ||
-						(currentSegA.getStart() >= currentSegB.getStart() && currentSegA.getEnd() >= currentSegB.getEnd())){
-					if (currentSegA.getCode() == currentSegB.getCode()){
-						int start;
-						if (currentSegA.getStart() > currentSegB.getStart()){
-							start = currentSegA.getStart();
-						}else{
-							start = currentSegB.getStart();
-						}
+		int startCount = 0;
+		int endCount = 0;
+		boolean inOverlap = false;
 
-						int end;
-						if (currentSegA.getEnd() < currentSegB.getEnd()){
-							end = currentSegA.getEnd();
-						}else{
-							end = currentSegB.getEnd();
-						}
+		Hashtable<String, ArrayList<ArrayList>> codes = new Hashtable<String, ArrayList<ArrayList>> ();
 
-						matches.add(new SegmentMatch(start,end,currentSegA.getCode(), ids)); 
-					}
-				}				
-				
-				continue;
-			}
+		for (String s : endpoints ) {
+			String[] vals = s.split("-");
 
-			if (currentSegA.getEnd() > currentSegB.getEnd()){
-				currentSegB = hapBSegs.nextElement();
-			}else{
-				currentSegA = hapASegs.nextElement();
-			}
+			if (vals[1].matches("S")) {
+				startCount++;
+				if (startCount - endCount > 0) {
+					inOverlap = true;
+					//we are in an overlapping segment record the code and start pos
+					if (codes.containsKey(vals[2])) {
+						ArrayList<ArrayList> al1 = codes.get(vals[2]);
+						ArrayList<Integer> al2 = al1.get(0);
+						ArrayList<String> al4 = al1.get(2);
+						al2.add(Integer.parseInt(vals[0]));
+						al4.add(vals[3]);
+						al1.add(al2);
+						al1.add(al4);
+						codes.put(vals[2], al1);
+					} else {
+						ArrayList<ArrayList> al1 = new ArrayList<ArrayList> ();
+						ArrayList<Integer> al2 = new ArrayList<Integer> ();
+						ArrayList<Integer> al3 = new ArrayList<Integer> ();
+						ArrayList<String> al4 = new ArrayList<String> ();
+						al2.add(Integer.parseInt(vals[0]));
+						al4.add(vals[3]);
+						al1.add(al2);
+						al1.add(al3);
+						al1.add(al4);
+						codes.put(vals[2], al1);
+					}		
+				} else {
+					inOverlap = false;
+				}
 
-			if ((currentSegA.getStart() >= currentSegB.getStart() && currentSegA.getStart() <= currentSegB.getEnd()) ||
-					(currentSegA.getEnd() >= currentSegB.getStart() && currentSegA.getEnd() <= currentSegB.getEnd()) ||
-					(currentSegA.getStart() <= currentSegB.getStart() && currentSegA.getEnd() >= currentSegB.getEnd())){
-				if (currentSegA.getCode() == currentSegB.getCode()){
-					int start;
-					if (currentSegA.getStart() > currentSegB.getStart()){
-						start = currentSegA.getStart();
-					}else{
-						start = currentSegB.getStart();
-					}
-
-					int end;
-					if (currentSegA.getEnd() < currentSegB.getEnd()){
-						end = currentSegA.getEnd();
-					}else{
-						end = currentSegB.getEnd();
-					}
-
-					matches.add(new SegmentMatch(start,end,currentSegA.getCode(), ids)); 
+			} else if (vals[1].matches("E")) {
+				endCount++;
+				if (inOverlap) {
+					ArrayList<ArrayList> al1 = codes.get(vals[2]);
+					ArrayList<Integer> al3 = al1.get(1);
+					al3.add(Integer.parseInt(vals[0]));
+					al1.add(al3);
+					codes.put(vals[2], al1);
 				}
 			}
 		}
-		return matches;
+		return codes;
 	}
-	
-	public Vector<SegmentMatch> getResults() {
-		return results;
-	}
-	
+
 }
