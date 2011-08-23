@@ -3,9 +3,17 @@ public class Segment {
 
 	int  start;
 	int  end;
-	byte code;
+	byte[] code;
+	String id;
 	
-	public Segment(int s, int e, byte c) {
+	public Segment(int s, int e, byte[] c, String d) {
+		start = s;
+		end   = e;
+		code  = c;
+		id    = d;
+	}
+	
+	public Segment(int s, int e, byte[] c) {
 		start = s;
 		end   = e;
 		code  = c;
@@ -19,8 +27,16 @@ public class Segment {
 		return end;
 	}
 
-	public byte getCode() {
+	public byte[] getCode() {
 		return code;
+	}
+	
+	public String getCodeString() {
+		return new String(getCode());
+	}
+
+	public String getId() {
+		return id;
 	}
 	
 }
