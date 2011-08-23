@@ -35,7 +35,7 @@ public class GUI extends JFrame implements ActionListener {
 	JPanel variantsPanel;
 	JPanel contentPanel;
 	JSplitPane mainPane;
-	JTextArea logPanel;
+	static JTextArea logPanel;
 	
 	// for initial vcf filtering
 	String freqFile = "test_files/test.freq.22.compressed.gz";
@@ -142,9 +142,7 @@ public class GUI extends JFrame implements ActionListener {
 					this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 					try {						
 						data = new DataDirectory(jfc.getSelectedFile().getAbsolutePath());
-						
-						drawPedigree(data.pedvizFile);
-						
+						drawPedigree(data.getPed());
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
