@@ -23,9 +23,13 @@ import pedviz.view.symbols.SymbolSexUndesignated;
 import java.awt.event.*;
 import java.awt.*;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -53,10 +57,12 @@ public class GUI extends JFrame implements ActionListener {
 	private JMenu fileMenu;
 	private JMenu toolMenu;
 	private JMenuItem openDirectory;
+	private JMenuItem exportVariants;
 	private JMenuItem findSegments;
 	
 	// initialise a global arraylist that will hold all the selected ids from the pedigree
 	private Hashtable<String, Integer> filterList = new Hashtable<String, Integer>();
+	private ArrayList<Variant> vcfData;
 	
 	FlowFile flow;
 	
@@ -79,7 +85,12 @@ public class GUI extends JFrame implements ActionListener {
 		openDirectory = new JMenuItem("Open Directory");
 		openDirectory.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,menumask));
 		openDirectory.addActionListener(this);
+		exportVariants = new JMenuItem("Export Variants");
+		exportVariants.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E,menumask));
+		exportVariants.addActionListener(this);
+		exportVariants.setEnabled(false);
 		fileMenu.add(openDirectory);
+		fileMenu.add(exportVariants);
 		
 		mb.add(fileMenu);
 		
@@ -162,6 +173,31 @@ public class GUI extends JFrame implements ActionListener {
 					this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 				}
 			} 
+		} else if (command.equals("Export Variants")) {
+			JFileChooser fileChooser = new JFileChooser();
+	        int option = fileChooser.showSaveDialog(this);
+	        if (option == JFileChooser.APPROVE_OPTION) {
+	        	String filename = fileChooser.getSelectedFile().getAbsolutePath();
+	        	FileOutputStream fos = null;
+				try {
+					fos = new FileOutputStream(filename);
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+	        	PrintStream output = new PrintStream(fos);
+	        	
+	        	output.print("CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER");		
+	    		for (String s : fsd.getSelectedInfo()) {
+	    			output.print("\t" + s);
+	    		}
+	    		output.println();
+	    		
+	    		for (Variant v : vcfData) {
+	    			output.println(join(v.getArray(fsd.getSelectedInfo()), "\t" ));
+	    		}
+	            output.close();
+	        }
 		} else if (command.equals("Find Segments")) {
 			ArrayList<Sample> selected = new ArrayList<Sample> ();
 			Enumeration<String> e = filterList.keys();
@@ -178,7 +214,6 @@ public class GUI extends JFrame implements ActionListener {
 				if (fsd.success()) {
 					minMatches = fsd.getMinMatches();
 					SampleCompare sc = new SampleCompare();
-					ArrayList<Variant> vcfData = null;
 					ArrayList<SegmentMatch> test = sc.compareMulti(selected);
 					int baseCount = 0;
 					for (SegmentMatch m : test) {
@@ -210,11 +245,13 @@ public class GUI extends JFrame implements ActionListener {
 							variantsPanel.add(scrollPane);
 							variantsPanel.repaint();
 							this.pack();
+							exportVariants.setEnabled(true);
 						}	
 					} else {
 						// no segments found
 						// if a table has already been created then remove it
 						variantsPanel.removeAll();
+						exportVariants.setEnabled(false);
 					}
 				} 
 			}
@@ -284,6 +321,18 @@ public class GUI extends JFrame implements ActionListener {
 	public void printLog(String text){
 		logPanel.append(text+"\n");
 		logPanel.repaint();
+    }
+	
+    public static String join(Collection s, String delimiter) {
+        StringBuffer buffer = new StringBuffer();
+        Iterator iter = s.iterator();
+        while (iter.hasNext()) {
+            buffer.append(iter.next());
+            if (iter.hasNext()) {
+                buffer.append(delimiter);
+            }
+        }
+        return buffer.toString();
     }
 	
 }
