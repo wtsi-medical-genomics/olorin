@@ -198,6 +198,9 @@ public class GUI extends JFrame implements ActionListener {
 						if (vcfData != null) {
 							variantsTable = new JTable(new vcfTableModel(vcfData,fsd.getSelectedInfo()));
 							variantsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+							TableColumnAdjuster tca = new TableColumnAdjuster(variantsTable);
+							tca.setColumnDataIncluded(true);
+							tca.adjustColumns();
 							variantsTable.setFillsViewportHeight(true);
 							variantsTable.setAutoCreateRowSorter(true);
 							JScrollPane scrollPane = new JScrollPane(variantsTable);
