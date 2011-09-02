@@ -1,61 +1,105 @@
 import java.util.ArrayList;
+import java.util.Hashtable;
 
 
 public class VCFMeta {
 	
-	String fileFomat;
-	ArrayList<String> info;
-	ArrayList<String> filter;
-	ArrayList<String> format;
-
-	// replace the arraylists with info, filter and format objects
+	ArrayList<Hashtable<String, String>> info;
+	ArrayList<Hashtable<String, String>> filter;
+	ArrayList<Hashtable<String, String>> format;
+	Hashtable<String,String> other;
+	ArrayList<String> samples;
+	ArrayList<String> infoIds;
+	
+	// replace the arraylists with info, filter and format objects?
 	
 	public VCFMeta() {
-		
+		info   = new ArrayList<Hashtable<String,String>> ();
+		filter = new ArrayList<Hashtable<String,String>> ();
+		format = new ArrayList<Hashtable<String,String>> ();
+		other  = new Hashtable<String,String> ();
+		infoIds = new ArrayList<String> ();
 	}
 	
 	public void add (String s) {
-		// remove leading #s
-		// split the string by =
-		// to give name and data
-		
-		if (name == fileformat) {
-			fileFormat = data
-		} else if (name == INFO) {
-			
-		} else if (name == FILTER) {
-			
-		} else if (name == FORMAT) {
-			
-		}
-		
-		String[] info = infoLine.trim().split("[<>]");
-		String[] values = info[1].split(",");
-		
-	}
-	
-	public VCFMeta(String infoLine, String mt) {
-		metaType = mt;
-		
-		
-		for (String key : values) {
-			if (key.startsWith("ID")) {
-				String[] aID = key.split("=");
-				ID = aID[1];
-			} else if (key.startsWith("Number")) {
-				String[] aNumber = key.split("=");
-				number = Integer.parseInt(aNumber[1]);
-			} else if (key.startsWith("Type")) {
-				//Possible Types for INFO fields are: Integer, Float, Flag, Character, and String.
-				String[] aType = key.split("=");
-				type = aType[1];
-			} else if (key.startsWith("Description")) {
-				String[] aDescription = key.split("=");
-				description = aDescription[1];
+		if (s.startsWith("##")) {
+			s = s.substring(2);
+			if (s.startsWith("INFO")) {
+				String[] values = s.trim().split("[<>]");
+				//split on the comma only if that comma has zero, or an even number of quotes in ahead of it
+				// for explaination see here http://stackoverflow.com/questions/1757065/java-splitting-a-comma-separated-string-but-ignoring-commas-in-quotes
+				String[] values2 = values[1].split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+				Hashtable ht = new Hashtable<String,String> ();
+				for (String val : values2) {
+					if (val.contains("=")) {
+						String[] values3 = val.split("=");
+						if (values3[0].matches("ID")) {
+							infoIds.add(values3[1]);
+						}
+						ht.put(values3[0], values3[1]);
+					} else {
+						ht.put(val, "true");
+					}
+				}
+				info.add(ht);
+			} else if (s.startsWith("FILTER")) {
+				String[] values = s.trim().split("[<>]");
+				String[] values2 = values[1].split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+				Hashtable ht = new Hashtable<String,String> ();
+				for (String val : values2) {
+					String[] values3 = val.split("=");
+					ht.put(values3[0], values3[1]);
+				}
+				filter.add(ht);
+			} else if (s.startsWith("FORMAT")) {
+				String[] values = s.trim().split("[<>]");
+				String[] values2 = values[1].split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+				Hashtable ht = new Hashtable<String,String> ();
+				for (String val : values2) {
+					String[] values3 = val.split("=");
+					ht.put(values3[0], values3[1]);
+				}
+				format.add(ht);
+			} else {
+				String[] values = s.trim().split("=");
+				other.put(values[0], values[1]);
+			}
+		} else if (s.startsWith("#")) {
+			s = s.substring(1);
+			// if there are format fields then there are genotypes in the file
+			// so parse the sample ids
+			if (format.size() > 0) {
+				samples = new ArrayList<String> ();
+				String[] values = s.trim().split("\t");
+				for (int i = 9; i < values.length; i++) {
+					samples.add(values[i]);
+				}
 			}
 		}
 	}
 
-	
-	
+	public String getFileFormat() {
+		return other.get("fileformat");
+	}
+
+	public ArrayList<Hashtable<String,String>> getInfo() {
+		return info;
+	}
+
+	public ArrayList<Hashtable<String,String>> getFilter() {
+		return filter;
+	}
+
+	public ArrayList<Hashtable<String,String>> getFormat() {
+		return format;
+	}
+
+	public ArrayList<String> getSamples() {
+		return samples;
+	}
+
+	public ArrayList<String> getInfoIds() {
+		return infoIds;
+	}
+
 }

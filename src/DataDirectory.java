@@ -38,7 +38,7 @@ public class DataDirectory {
         
         for (String chrom : knownChroms.keySet()){
         	String flowName = fileName + "." + chrom + ".flow";
-        	FlowFile flow = new FlowFile(directory.getAbsolutePath() + File.separator + flowName);   	
+        	FlowFile flow = new FlowFile(directory.getAbsolutePath() + File.separator + flowName);   
         	String mapName = fileName + "." + chrom + ".map";
         	MapFile map   = new MapFile(directory.getAbsolutePath() + File.separator + mapName);
     		flow.setPos(map.getPositions());
@@ -54,19 +54,24 @@ public class DataDirectory {
     				samples.put(s, samp);
     			}
     		}
+    		printLog("Found and parsed flow file: " + flowName);
+    		printLog("Found and parsed map file: " + mapName);
         }
 		
         String vcfName = fileName + ".vcf.gz";
 		vcf = new VCF(directory.getAbsolutePath() + File.separator + vcfName);
+		printLog("Found and parsed vcf file: " + vcfName);
 		
 		String pedName = fileName + ".ped";
 		PedFile pedFile = new PedFile(directory.getAbsolutePath() + File.separator + pedName);
 		ped = pedFile.makeCSV();
+		printLog("Found and parsed ped file: " + pedName);
 		
 	}
 	
 	public void printLog(String text){
 		GUI.logPanel.append(text+"\n");
+		GUI.logPanel.repaint();	
     }
 	
 	class ExtensionFilter implements FilenameFilter{

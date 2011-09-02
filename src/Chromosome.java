@@ -6,8 +6,8 @@ import java.util.Vector;
 
 public class Chromosome {
 	
-	ArrayList<Segment> matHap;
-	ArrayList<Segment> patHap;
+	private ArrayList<Segment> matHap;
+	private ArrayList<Segment> patHap;
 	
 	public Chromosome(ArrayList<Segment> m, ArrayList<Segment> p) {
 		matHap = m;
@@ -15,11 +15,13 @@ public class Chromosome {
 	}
 	
 	public ArrayList<Segment> getMatHap() {
-		return matHap;
+		ArrayList<Segment> copy = (ArrayList<Segment>) matHap.clone();
+		return copy;
 	}
 
 	public ArrayList<Segment> getPatHap() {
-		return patHap;
+		ArrayList<Segment> copy = (ArrayList<Segment>) patHap.clone();
+		return copy;
 	}
 	
 	public Iterator<Segment> getMatIt() {

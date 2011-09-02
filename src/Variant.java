@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -12,7 +13,7 @@ public class Variant {
 	public String qual;
 	public String filter;
 	public Hashtable<String, String> info;
-	public Vector<Hashtable<String, String>> geno;
+	public Vector<String> geno;
 	
 	public Variant () {
 		
@@ -56,15 +57,9 @@ public class Variant {
 			}
 		}
 		
-		String[] format = values[8].split(":");
-		geno = new Vector<Hashtable<String, String>> ();
+		geno = new Vector<String> ();
 		for (int i = 9; i < values.length; i++) {
-			String[] indVals = values[i].split(":");
-			Hashtable<String, String> indHash = new Hashtable<String, String> ();
-			for (int j = 0; j < indVals.length; j++) {
-				indHash.put(format[j], indVals[j]);   
-			}
-			geno.add(indHash);
+			geno.add(values[i]);
 		}
 		
 		this.setChr(chr_i);
@@ -130,7 +125,29 @@ public class Variant {
 	public Hashtable<String, String> getInfo() {
 		return info;
 	}
-	public Vector<Hashtable<String, String>> getGenotypes() {
+	public Vector<String> getGenotypes() {
 		return geno;
+	}
+
+	public ArrayList<Variant> getArray(ArrayList<String> selectedCols) {
+		ArrayList variant = new ArrayList();
+		variant.add(getChr());
+		variant.add(getPos());
+		variant.add(getId());
+		variant.add(getRef());
+		variant.add(getAlt());
+		variant.add(getQual());
+		variant.add(getFilter());
+		
+		for (String s : selectedCols) {
+			String value = getInfo().get(s);
+			if (value != null) {
+				variant.add(value);
+			} else {
+				variant.add(".");
+			}
+			
+		}
+		return variant;
 	}
 }

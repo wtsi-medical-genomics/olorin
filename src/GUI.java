@@ -1,6 +1,8 @@
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 
+import org.junit.Test;
+
 import pedviz.algorithms.Sugiyama;
 import pedviz.graph.Graph;
 import pedviz.graph.Node;
@@ -22,25 +24,32 @@ import java.awt.event.*;
 import java.awt.*;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 
 public class GUI extends JFrame implements ActionListener {
 	
+	FindSegmentsDialog fsd;
 	JFileChooser jfc;
 	DataDirectory data;
 	ProgressMonitor pm;
-	
+	JTable variantsTable;
 	JPanel pedigreePanel;
 	JPanel variantsPanel;
 	JPanel contentPanel;
 	JSplitPane mainPane;
 	static JTextArea logPanel;
 	
-	// for initial vcf filtering
-	String freqFile = "test_files/test.freq.22.compressed.gz";
+	// user options 
+	int minMatches = 4;
 	Double commonCutoff = 0.05;
 	
+	// set the location of some default frequency files 1kg ceu etc
+	String freqFile = "test_files/test.freq.22.compressed.gz";
+		
 	private JMenu fileMenu;
 	private JMenu toolMenu;
 	private JMenuItem openDirectory;
@@ -60,10 +69,10 @@ public class GUI extends JFrame implements ActionListener {
 
 	GUI() {
 		super("Oberon");
-
+		
 		jfc = new JFileChooser("user.dir");
 		JMenuBar mb = new JMenuBar();
-
+		
 		int menumask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
 
 		fileMenu = new JMenu("File");
@@ -99,28 +108,29 @@ public class GUI extends JFrame implements ActionListener {
 		pedigreePanel.setMinimumSize(minSize);
 		variantsPanel.setMinimumSize(minSize);
 		//Provide prefered sizes for the components
-		Dimension prefSize = new Dimension(500,500);
+		Dimension prefSize = new Dimension(800,500);
 		pedigreePanel.setPreferredSize(prefSize);
 		variantsPanel.setPreferredSize(prefSize);
 		
 		//Create a split pane with the two scroll panes in it.
-		mainPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, pedigreePanel, variantsPanel);
-		mainPane.setOneTouchExpandable(true);
-		mainPane.setDividerLocation(500);
+		JSplitPane upperPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, pedigreePanel, variantsPanel);
+		upperPane.setOneTouchExpandable(true);
+		upperPane.setDividerLocation(500);
 
-		// the log panel seems to be throwing the splitpane off for some reason
 		logPanel = new JTextArea();
 		logPanel.setEditable(false);
 		logPanel.setFont(new Font("Monospaced",Font.PLAIN,12));
 		logPanel.setLineWrap(true);
 		logPanel.setWrapStyleWord(true);
         JScrollPane scrollPane = new JScrollPane(logPanel);
+        scrollPane.setPreferredSize(new Dimension(100,50));
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
+        mainPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, upperPane, scrollPane);
+        
         contentPanel = new JPanel();
 		contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
 		contentPanel.add(mainPane);
-		contentPanel.add(scrollPane);
 		
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
@@ -143,6 +153,7 @@ public class GUI extends JFrame implements ActionListener {
 					try {						
 						data = new DataDirectory(jfc.getSelectedFile().getAbsolutePath());
 						drawPedigree(data.getPed());
+						findSegments.setEnabled(true);
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -150,6 +161,59 @@ public class GUI extends JFrame implements ActionListener {
 				} finally {
 					this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 				}
+			} 
+		} else if (command.equals("Find Segments")) {
+			ArrayList<Sample> selected = new ArrayList<Sample> ();
+			Enumeration<String> e = filterList.keys();
+			while (e.hasMoreElements()) {
+				String sample = e.nextElement();
+				Sample s = data.samples.get(sample);
+				selected.add(s);
+			}
+
+			if (selected.size() > 1) {
+				fsd = new FindSegmentsDialog(this, selected.size(), data.vcf.getMeta());
+				fsd.pack();
+				fsd.setVisible(true);
+				if (fsd.success()) {
+					minMatches = fsd.getMinMatches();
+					SampleCompare sc = new SampleCompare();
+					ArrayList<Variant> vcfData = null;
+					ArrayList<SegmentMatch> test = sc.compareMulti(selected);
+					int baseCount = 0;
+					for (SegmentMatch m : test) {
+						if (m.getIds().size() >= minMatches) {
+							baseCount +=   m.getEnd() - m.getStart();
+						}
+					}
+					System.out.println("Found " + test.size() + " regions covering " + baseCount/1000000 + "Mb");
+					if (test.size() > 0) {
+						try {
+							vcfData = data.vcf.getVariants(test, minMatches);
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+						printLog("found " + vcfData.size() + " variants");
+						if (vcfData != null) {
+							variantsTable = new JTable(new vcfTableModel(vcfData,fsd.getSelectedInfo()));
+							variantsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+							variantsTable.setFillsViewportHeight(true);
+							variantsTable.setAutoCreateRowSorter(true);
+							JScrollPane scrollPane = new JScrollPane(variantsTable);
+							scrollPane.setPreferredSize(variantsPanel.getSize());
+							//remove previous tables first
+							variantsPanel.removeAll();
+							variantsPanel.add(scrollPane);
+							variantsPanel.repaint();
+							this.pack();
+						}	
+					} else {
+						// no segments found
+						// if a table has already been created then remove it
+						variantsPanel.removeAll();
+					}
+				} 
 			}
 		}
 	}
@@ -208,7 +272,7 @@ public class GUI extends JFrame implements ActionListener {
 					}
 				}	
 		);
-		
+		pedigreePanel.removeAll();
 		pedigreePanel.add(view.getComponent());
 		contentPanel.revalidate();
 		contentPanel.repaint();
@@ -216,6 +280,7 @@ public class GUI extends JFrame implements ActionListener {
 	
 	public void printLog(String text){
 		logPanel.append(text+"\n");
+		logPanel.repaint();
     }
 	
 }

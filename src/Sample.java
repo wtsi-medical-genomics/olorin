@@ -18,7 +18,7 @@ public class Sample {
 
 	}
 
-	public Chromosome getChr (String c) {
+	public Chromosome getChr (String c) { 
 		return chr.get(c);
 	}
 	
