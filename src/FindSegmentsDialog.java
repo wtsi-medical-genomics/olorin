@@ -1,6 +1,9 @@
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
+import java.awt.Dimension;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -8,41 +11,45 @@ import java.util.Hashtable;
 
 
 
-public class FindSegmentsDialog extends JDialog implements ActionListener {
+public class FindSegmentsDialog extends JDialog implements ActionListener,ChangeListener {
 		
 		private boolean success;
 		private ArrayList<JCheckBox> checkBoxes;
 		private ArrayList<String> selectedInfo;
+		JTable filterTable;
 	    
 		private int minMatches;
 		private JTextField minMatchesField;
+		private VCFMeta meta;
 		
-		public FindSegmentsDialog(JFrame parent, int selected, VCFMeta meta){
-	    	super(parent,"Find segments",true);
+		public FindSegmentsDialog(JFrame parent, int selected, VCFMeta metainfo){
+	    	super(parent,"Filter Variants",true);
+	    	
+	    	meta = metainfo;
 	    	
 	        JPanel contents = new JPanel();
 	        contents.setLayout(new BoxLayout(contents,BoxLayout.Y_AXIS));
-
 	        JPanel minMatchesPanel = new JPanel();
 	        minMatchesPanel.add(new JLabel("Minimum number of matching chromosomes: "));
-	        minMatchesField = new JTextField(Integer.toString(selected), 5);
-	        minMatchesPanel.add(minMatchesField);	       
+	        JSlider matchNum = new JSlider(JSlider.HORIZONTAL,2, selected, selected);
+	        //set the default value of minMatches
+	        setMinMatches(selected);
+	        matchNum.addChangeListener(this);
+	        matchNum.setMajorTickSpacing(1);
+	        matchNum.setPaintTicks(true);
+	        matchNum.setPaintLabels(true);
+	        matchNum.setSnapToTicks(true);
+	        minMatchesPanel.add(matchNum);
 	        contents.add(minMatchesPanel);
 	        
-	        contents.add(new JPanel());
-	        
-	        JPanel columnSelectPanel = new JPanel();
-	        columnSelectPanel.setLayout(new BoxLayout(columnSelectPanel, BoxLayout.Y_AXIS));
-	        columnSelectPanel.add(new JLabel("Select Data Columns"));
-	        ArrayList<Hashtable<String, String>> info = meta.getInfo();
-	        checkBoxes = new ArrayList<JCheckBox> ();
-	        for ( Hashtable<String, String> infoField : info) {
-	        	JCheckBox cb = new JCheckBox(infoField.get("ID") + " - " + infoField.get("Description"));
-	        	columnSelectPanel.add(cb);
-	        	checkBoxes.add(cb);	
-	        }
-	
-	        contents.add(columnSelectPanel);
+	        filterTable = new JTable(new FilterTableModel(meta));
+	        filterTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+	        filterTable.setFillsViewportHeight(true);
+	        TableColumnAdjuster tca = new TableColumnAdjuster(filterTable);
+			tca.setColumnDataIncluded(true);
+			tca.adjustColumns();
+	        JScrollPane scrollPane = new JScrollPane(filterTable);
+	        contents.add(scrollPane);
 	        
 	        JPanel butPan = new JPanel();
 	        JButton okbut = new JButton("OK");
@@ -53,19 +60,17 @@ public class FindSegmentsDialog extends JDialog implements ActionListener {
 	        cancelbut.addActionListener(this);
 	        butPan.add(cancelbut);
 	        contents.add(butPan);
-
+	        this.pack();
 	        this.setContentPane(contents);
 	    }
 
 	    public void actionPerformed(ActionEvent e) {
 	        if (e.getActionCommand().equals("OK")){
-	        	minMatches = Integer.parseInt(minMatchesField.getText());
+	        	ArrayList<Boolean> selected = ((FilterTableModel) filterTable.getModel()).getSelected();
 	        	selectedInfo = new ArrayList<String> ();
-	        	for (JCheckBox cb : checkBoxes) {
-	        		if (cb.isSelected()) {
-	        			String s = cb.getText();
-	        			String[] a = s.split(" - ");
-	        			selectedInfo.add(a[0]);
+	        	for (int i=0; i < meta.info.size(); i++ ) {
+	        		if (selected.get(i)) {
+	        			selectedInfo.add(meta.getInfo().get(i).get("ID"));
 	        		}
 	        	}
 	            setSuccess(true);
@@ -75,19 +80,29 @@ public class FindSegmentsDialog extends JDialog implements ActionListener {
 	        	this.dispose();
 	        }
 	    }
+	    
+	    public void stateChanged(ChangeEvent e) {
+	        JSlider source = (JSlider)e.getSource();
+	        if (!source.getValueIsAdjusting()) {
+	        	setMinMatches((int)source.getValue());
+	        }
+	    }
 
-	    public boolean success() {
+		public boolean success() {
 	    	return success;
 	    }
 	
 		public void setSuccess(boolean b) {
 			success = b;
-			
 		}
 		    
 	    public int getMinMatches() {
 	    	return minMatches;
 	    }
+	    
+	    private void setMinMatches(int value) {
+	    	minMatches = value;
+		}
 	    
 	    public ArrayList<String> getSelectedInfo() {
 	    	return selectedInfo;
