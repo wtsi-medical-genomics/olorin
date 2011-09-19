@@ -4,13 +4,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Vector;
-import java.util.Arrays;
 import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
 import java.util.zip.GZIPInputStream;
 
-import org.hamcrest.core.IsNull;
 
 
 public class FlowFile {
