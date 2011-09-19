@@ -1,8 +1,9 @@
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Vector;
 
 
-public class SegmentMatch extends Segment {
+public class SegmentMatch<t> extends Segment {
 
 	ArrayList<Integer> ids;
 	String chr;
@@ -19,6 +20,17 @@ public class SegmentMatch extends Segment {
 
 	public String getChr () {
 		return chr;
+	}
+
+	public Collection getArray() {
+		ArrayList segment = new ArrayList();
+		segment.add(this.getChr());
+		segment.add(this.getStart());
+		segment.add(this.getEnd());
+		segment.add(this.getIds().size());
+		segment.add(this.getIds().toString());
+
+		return segment;
 	}
 	
 }
