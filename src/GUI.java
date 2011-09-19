@@ -1,8 +1,7 @@
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
-
-import org.junit.Test;
-
 import pedviz.algorithms.Sugiyama;
 import pedviz.graph.Graph;
 import pedviz.graph.Node;
@@ -19,13 +18,11 @@ import pedviz.view.rules.ShapeRule;
 import pedviz.view.symbols.SymbolSexFemale;
 import pedviz.view.symbols.SymbolSexMale;
 import pedviz.view.symbols.SymbolSexUndesignated;
-
 import java.awt.event.*;
 import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -36,33 +33,29 @@ import java.util.Iterator;
 
 public class GUI extends JFrame implements ActionListener {
 	
-	FindSegmentsDialog fsd;
+	//FindSegmentsDialog fsd;
+        FindSegmentsDialog3 fsd;
 	JFileChooser jfc;
 	DataDirectory data;
 	ProgressMonitor pm;
 	JTable variantsTable;
 	JPanel pedigreePanel;
 	JPanel variantsPanel;
+	JPanel segmentPanel;
 	JPanel contentPanel;
 	JSplitPane mainPane;
-	static JTextArea logPanel;
-	
-	// user options 
-	int minMatches = 4;
-	Double commonCutoff = 0.05;
-	
-	// set the location of some default frequency files 1kg ceu etc
-	String freqFile = "test_files/test.freq.22.compressed.gz";
-		
+	static JTextArea logPanel;	
 	private JMenu fileMenu;
 	private JMenu toolMenu;
 	private JMenuItem openDirectory;
 	private JMenuItem exportVariants;
+	private JMenuItem exportSegments;
 	private JMenuItem findSegments;
-	
+	private int minMatches;
 	// initialise a global arraylist that will hold all the selected ids from the pedigree
 	private Hashtable<String, Integer> filterList = new Hashtable<String, Integer>();
 	private ArrayList<Variant> vcfData;
+	private ArrayList<SegmentMatch> segments;
 	
 	FlowFile flow;
 	
@@ -89,8 +82,13 @@ public class GUI extends JFrame implements ActionListener {
 		exportVariants.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E,menumask));
 		exportVariants.addActionListener(this);
 		exportVariants.setEnabled(false);
+		exportSegments = new JMenuItem("Export Segments");
+		exportSegments.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,menumask));
+		exportSegments.addActionListener(this);
+		exportSegments.setEnabled(false);
 		fileMenu.add(openDirectory);
 		fileMenu.add(exportVariants);
+		fileMenu.add(exportSegments);
 		
 		mb.add(fileMenu);
 		
@@ -114,30 +112,47 @@ public class GUI extends JFrame implements ActionListener {
 		variantsPanel.setBorder(new LineBorder(Color.BLACK));
 		variantsPanel.setBackground(Color.WHITE);
 
-        //Provide minimum sizes for the components
-		Dimension minSize = new Dimension(100, 50);
-		pedigreePanel.setMinimumSize(minSize);
-		variantsPanel.setMinimumSize(minSize);
-		//Provide prefered sizes for the components
-		Dimension prefSize = new Dimension(800,500);
-		pedigreePanel.setPreferredSize(prefSize);
-		variantsPanel.setPreferredSize(prefSize);
+        // add a pane next to the log pane that contains a table of the segment including sizes
+        // also generate a genome wide plot of the number of chromosome matching 
+		segmentPanel = new JPanel();
+		segmentPanel.setBorder(new LineBorder(Color.BLACK));
+		segmentPanel.setBackground(Color.WHITE);
 		
-		//Create a split pane with the two scroll panes in it.
-		JSplitPane upperPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, pedigreePanel, variantsPanel);
-		upperPane.setOneTouchExpandable(true);
-		upperPane.setDividerLocation(500);
-
+		
 		logPanel = new JTextArea();
 		logPanel.setEditable(false);
 		logPanel.setFont(new Font("Monospaced",Font.PLAIN,12));
 		logPanel.setLineWrap(true);
 		logPanel.setWrapStyleWord(true);
-        JScrollPane scrollPane = new JScrollPane(logPanel);
-        scrollPane.setPreferredSize(new Dimension(100,50));
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        JScrollPane loggingPane = new JScrollPane(logPanel);
+        loggingPane.setPreferredSize(new Dimension(100,50));
+        loggingPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		
+        //Provide minimum sizes for the components
+		Dimension minSizeUpper = new Dimension(100, 50);
+		Dimension minSizeLower = new Dimension(100, 50);
+		pedigreePanel.setMinimumSize(minSizeUpper);
+		variantsPanel.setMinimumSize(minSizeUpper);
+		loggingPane.setMinimumSize(minSizeLower);
+		segmentPanel.setMinimumSize(minSizeLower);
+		//Provide prefered sizes for the components
+		Dimension prefSizeUpper = new Dimension(800,500);
+		Dimension prefSizeLower = new Dimension(800,70);
+		pedigreePanel.setPreferredSize(prefSizeUpper);
+		variantsPanel.setPreferredSize(prefSizeUpper);
+		loggingPane.setPreferredSize(prefSizeLower);
+		segmentPanel.setPreferredSize(prefSizeLower);
+				
+		//Create a split pane with the two scroll panes in it.
+		JSplitPane upperPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, pedigreePanel, variantsPanel);
+		upperPane.setOneTouchExpandable(true);
+		upperPane.setDividerLocation(500);
 
-        mainPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, upperPane, scrollPane);
+		JSplitPane lowerPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, loggingPane, segmentPanel);
+		lowerPane.setOneTouchExpandable(true);
+		lowerPane.setDividerLocation(500);
+        
+        mainPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, upperPane, lowerPane);
         
         contentPanel = new JPanel();
 		contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
@@ -166,8 +181,7 @@ public class GUI extends JFrame implements ActionListener {
 						drawPedigree(data.getPed());
 						findSegments.setEnabled(true);
 					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						JOptionPane.showMessageDialog(contentPanel, e.getMessage());
 					}
 				} finally {
 					this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
@@ -198,6 +212,25 @@ public class GUI extends JFrame implements ActionListener {
 	    		}
 	            output.close();
 	        }
+		} else if (command.equals("Export Segments")) {
+			JFileChooser fileChooser = new JFileChooser();
+	        int option = fileChooser.showSaveDialog(this);
+	        if (option == JFileChooser.APPROVE_OPTION) {
+	        	String filename = fileChooser.getSelectedFile().getAbsolutePath();
+	        	System.out.println(filename);
+	        	FileOutputStream fos = null;
+				try {
+					fos = new FileOutputStream(filename);
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+	        	PrintStream output = new PrintStream(fos);
+	    		for (SegmentMatch s : segments) {
+	    			output.println(join(s.getArray(), "\t" ));
+	    		}
+	            output.close();
+	        }
 		} else if (command.equals("Find Segments")) {
 			ArrayList<Sample> selected = new ArrayList<Sample> ();
 			Enumeration<String> e = filterList.keys();
@@ -208,50 +241,85 @@ public class GUI extends JFrame implements ActionListener {
 			}
 
 			if (selected.size() > 1) {
-				fsd = new FindSegmentsDialog(this, selected.size(), data.vcf.getMeta());
+				fsd = new FindSegmentsDialog3(selected.size(), data.vcf.getMeta());
+                                fsd.setModal(true);
 				fsd.pack();
 				fsd.setVisible(true);
 				if (fsd.success()) {
 					minMatches = fsd.getMinMatches();
-					SampleCompare sc = new SampleCompare();
-					ArrayList<SegmentMatch> test = sc.compareMulti(selected);
+                                        
+                                        SampleCompare sc = new SampleCompare();
+					segments = sc.compareMulti(selected);
 					int baseCount = 0;
-					for (SegmentMatch m : test) {
+					for (SegmentMatch m : segments) {
 						if (m.getIds().size() >= minMatches) {
 							baseCount +=   m.getEnd() - m.getStart();
 						}
 					}
-					System.out.println("Found " + test.size() + " regions covering " + baseCount/1000000 + "Mb");
-					if (test.size() > 0) {
-						try {
-							vcfData = data.vcf.getVariants(test, minMatches);
+					System.out.println("Found " + segments.size() + " regions covering " + baseCount/1000000 + "Mb");
+                                        
+                                        if (segments.size() > 0) {
+						
+                                            if (fsd.freqFilter()) {
+                                                try {
+                                                    vcfData = data.vcf.getVariants(segments, minMatches, new FreqFile("/Users/jm20/work/NetBeansProjects/Oberon_svn/data" + File.separator + fsd.getPop() + ".frq.gz"), fsd.getFreqCutoff());
+                                                } catch (Exception ex) {
+                                                    Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                                                }
+                                                
+                                                if (vcfData != null) {
+                                                    variantsTable = new JTable(new vcfTableModel(vcfData, fsd.getSelectedInfo(), fsd.getPop()));
+                                                    variantsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+                                                    TableColumnAdjuster tca = new TableColumnAdjuster(variantsTable);
+                                                    tca.setColumnDataIncluded(true);
+                                                    tca.adjustColumns();
+                                                    variantsTable.setFillsViewportHeight(true);
+                                                    variantsTable.setAutoCreateRowSorter(true);
+                                                    JScrollPane scrollPane = new JScrollPane(variantsTable);
+                                                    scrollPane.setPreferredSize(variantsPanel.getSize());
+                                                    //remove previous tables first
+                                                    variantsPanel.removeAll();
+                                                    variantsPanel.add(scrollPane);
+                                                    variantsPanel.repaint();
+                                                    this.pack();
+                                                    exportVariants.setEnabled(true);
+                                                    exportSegments.setEnabled(true);
+                                                }
+                                            } else {
+                                                try {
+							vcfData = data.vcf.getVariants(segments, minMatches);
 						} catch (IOException e1) {
 							// TODO Auto-generated catch block
-							e1.printStackTrace();
 						}
-						printLog("found " + vcfData.size() + " variants");
-						if (vcfData != null) {
-							variantsTable = new JTable(new vcfTableModel(vcfData,fsd.getSelectedInfo()));
-							variantsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-							TableColumnAdjuster tca = new TableColumnAdjuster(variantsTable);
-							tca.setColumnDataIncluded(true);
-							tca.adjustColumns();
-							variantsTable.setFillsViewportHeight(true);
-							variantsTable.setAutoCreateRowSorter(true);
-							JScrollPane scrollPane = new JScrollPane(variantsTable);
-							scrollPane.setPreferredSize(variantsPanel.getSize());
-							//remove previous tables first
-							variantsPanel.removeAll();
-							variantsPanel.add(scrollPane);
-							variantsPanel.repaint();
-							this.pack();
-							exportVariants.setEnabled(true);
-						}	
+                                                if (vcfData != null) {
+                                                    variantsTable = new JTable(new vcfTableModel(vcfData, fsd.getSelectedInfo()));
+                                                    variantsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+                                                    TableColumnAdjuster tca = new TableColumnAdjuster(variantsTable);
+                                                    tca.setColumnDataIncluded(true);
+                                                    tca.adjustColumns();
+                                                    variantsTable.setFillsViewportHeight(true);
+                                                    variantsTable.setAutoCreateRowSorter(true);
+                                                    JScrollPane scrollPane = new JScrollPane(variantsTable);
+                                                    scrollPane.setPreferredSize(variantsPanel.getSize());
+                                                    //remove previous tables first
+                                                    variantsPanel.removeAll();
+                                                    variantsPanel.add(scrollPane);
+                                                    variantsPanel.repaint();
+                                                    this.pack();
+                                                    exportVariants.setEnabled(true);
+                                                    exportSegments.setEnabled(true);
+                                                }
+                                            }
+                                            
+                                            printLog("found " + vcfData.size() + " variants");
+					
+                                            	
 					} else {
-						// no segments found
-						// if a table has already been created then remove it
-						variantsPanel.removeAll();
-						exportVariants.setEnabled(false);
+                                            // no segments found
+                                            // if a table has already been created then remove it
+                                            variantsPanel.removeAll();
+                                            //remove any created plots
+                                            exportVariants.setEnabled(false);
 					}
 				} 
 			}
