@@ -1,6 +1,5 @@
 import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.HashMap;
 
 
 public class Variant {
@@ -12,8 +11,9 @@ public class Variant {
 	public String alt;
 	public String qual;
 	public String filter;
-	public Hashtable<String, String> info;
-	public Vector<String> geno;
+        public double freq;
+	public HashMap<String, String> info;
+	public ArrayList<String> geno;
 	
 	public Variant () {
 		
@@ -22,31 +22,31 @@ public class Variant {
 	public Variant(String vcfLine) {
 		
 		String values[] = vcfLine.split("\t");
-		String chr = values[0];
-		String pos = values[1];
+		String chr_s = values[0];
+		String pos_s = values[1];
 		int chr_i = 0;
 		int pos_i = 0;
 		try {
-			chr_i = Integer.parseInt(chr);
+			chr_i = Integer.parseInt(chr_s);
 		} catch (NumberFormatException nfe) {
-			if (chr.matches("X")) {
+			if (chr_s.matches("X")) {
 				chr_i = 23;
-			} else if (chr.matches("Y")) {
+			} else if (chr_s.matches("Y")) {
 				chr_i = 24;
-			} else if (chr.matches("MT")) {
+			} else if (chr_s.matches("MT")) {
 				chr_i = 25;
 			} else {
-				System.out.println("can't parse chromosome '" + chr + "'");
+				System.out.println("can't parse chromosome '" + chr_s + "'");
 			}
 		}
 		
 		try {
-			pos_i = Integer.parseInt(pos);
+			pos_i = Integer.parseInt(pos_s);
 		} catch (NumberFormatException nfe) {
-			System.out.println("position is not a number '" + pos + "'");
+			System.out.println("position is not a number '" + pos_s + "'");
 		}
 		
-		info = new Hashtable<String, String> ();
+		info = new HashMap<String, String> ();
 		String infoVals[] = values[7].split(";");
 		for (int i = 0; i < infoVals.length; i++) {
 			if (infoVals[i].contains("=")) {
@@ -57,7 +57,7 @@ public class Variant {
 			}
 		}
 		
-		geno = new Vector<String> ();
+		geno = new ArrayList<String> ();
 		for (int i = 9; i < values.length; i++) {
 			geno.add(values[i]);
 		}
@@ -122,14 +122,26 @@ public class Variant {
 	public String getFilter() {
 		return filter;
 	}
-	public Hashtable<String, String> getInfo() {
+	public HashMap<String, String> getInfo() {
 		return info;
 	}
-	public Vector<String> getGenotypes() {
+	public ArrayList<String> getGenotypes() {
 		return geno;
 	}
 
-	public ArrayList<Variant> getArray(ArrayList<String> selectedCols) {
+	public ArrayList<Variant> getArray() {
+		ArrayList variant = new ArrayList();
+		variant.add(getChr());
+		variant.add(getPos());
+		variant.add(getId());
+		variant.add(getRef());
+		variant.add(getAlt());
+		variant.add(getQual());
+		variant.add(getFilter());
+		return variant;
+	}
+        
+        public ArrayList<Variant> getArray(ArrayList<String> selectedCols) {
 		ArrayList variant = new ArrayList();
 		variant.add(getChr());
 		variant.add(getPos());
@@ -150,4 +162,8 @@ public class Variant {
 		}
 		return variant;
 	}
+
+    void setFreq(Double f) {
+        freq = f;
+    }
 }
