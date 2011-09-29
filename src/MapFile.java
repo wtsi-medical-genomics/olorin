@@ -1,17 +1,15 @@
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.zip.GZIPInputStream;
 
 
 public class MapFile {
 
 	BufferedReader mfr;
-	Vector<Integer> positions;
+	ArrayList<Integer> positions;
 	
 	public MapFile (String fileName) throws IOException {
 		if (fileName.endsWith(".gz")) {
@@ -24,7 +22,7 @@ public class MapFile {
 
 	private void parseMap() throws IOException {
 		String line;
-		positions = new Vector<Integer> ();		
+		positions = new ArrayList<Integer> ();		
 		while((line=mfr.readLine()) != null) {
 			if (!line.isEmpty()) {
 				String[] values = line.trim().split("\\s+");
@@ -33,7 +31,7 @@ public class MapFile {
 		}
 	}
 
-	public Vector<Integer> getPositions() {
+	public ArrayList<Integer> getPositions() {
 		return positions;
 	}
 
