@@ -24,11 +24,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
@@ -42,7 +38,6 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
-import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JToolTip;
 import javax.swing.Timer;
@@ -117,7 +112,6 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
     transient private int deltaX;
     transient private BufferedImage paintBuffer;
     transient private boolean paintBufferValid;
-    private IdeogramMainWindow mainWindow;
     private Timer timer;
     private int lineWidth;
     private Marker selected_gene;
@@ -266,69 +260,6 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
     }
 
     /**
-     * 
-     * @return True if the markers are shown.
-     * @see #setShowMarkers
-     * @see #getMarkers
-     * 
-     */
-    public boolean getShowMarkers() {
-        return showMarkers;
-    }
-
-    /**
-     * Show markers. Set with {@link #addMarkers}.
-     * 
-     * @param showMarkers
-     */
-    public void setShowMarkers(boolean showMarkers) {
-        if (showMarkers != this.showMarkers) {
-            this.showMarkers = showMarkers;
-            invalidatePaintBuffer();
-        }
-    }
-
-    /**
-     * 
-     * @return MarkerCollection with markers.
-     */
-    public MarkerCollection getMarkers(int i) {
-        return markers.get(i);
-    }
-
-    public int getNumMarkers() {
-        return markers.size();
-    }
-
-    public MarkerCollection[] getMarkers() {
-        MarkerCollection[] mc = new MarkerCollection[markers.size()];
-        for (int i = 0; i < markers.size(); ++i) {
-            mc[i] = markers.get(i);
-        }
-        return mc;
-    }
-
-    /**
-     * Adds a marker set {@link MarkerCollection}.
-     * 
-     * @param M Collection of markers.
-     */
-    public synchronized void addMarkers(MarkerCollection M) {
-        markers.add(M);
-        updateSize();
-    }
-
-    /**
-     * Removes all markers from this ideogram.
-     * synchronized ???
-     */
-    public synchronized void clearMarkers() {
-        selectedMarker = null;
-        markers.clear();
-        updateSize();
-    }
-
-    /**
      * Zoom fully out.
      *
      */
@@ -407,20 +338,6 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
      */
     public boolean getShowDetails() {
         return getZoom() >= 10.0;
-    }
-
-    /**
-     * 
-     * Sets the width-range of the ideogram graphic. So if the size of the
-     * panel changes the graphic will not exceed the given boundary. 
-     *
-     * @param minWidth Minimum width of the ideogram graphic.
-     * @param maxWidth Maximum width of the ideogram graphic.
-     */
-    public void setWidth(int minWidth, int maxWidth) {
-        this.minWidth = minWidth;
-        this.maxWidth = maxWidth;
-        repaint();
     }
 
     /**
@@ -539,10 +456,7 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
         graphics.fillRect(0, 0, getWidth(), getHeight());
 
         paintRangeSelection(graphics);
-
-        paintBackgroundSelections(graphics);
         paintIdeogramBuffered(graphics);
-        paintForegroundSelections(graphics);
         
         if (drawSegments) {
             drawSegments(graphics);
@@ -569,17 +483,6 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
             minLevel = 1;
             maxLevel = 1;
         }
-
-        //g.setColor(getBackground());
-        //g.fillRect(0, 0, width-1, height-1);
-
-        if (db == null) {	// no database: draw a cross
-            g.setColor(Color.RED);
-            g.drawLine(0, 0, dim.width - 1, dim.height - 1);
-            g.drawLine(dim.width - 1, dim.height - 1, 0, 0);
-            return;
-        }
-        // TODO : setfont
 
         // g.setFont(labelFont);
         float fontSize = Math.min(20.0f, Math.max(6.0f, 8.0f * (float) dim.width / 100));
@@ -610,13 +513,9 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
                 // contains the last upper end (or -1 if there was no end)
                 count = 0; // number of shown bands
 
-        byte last_arm = 0,
-                next_arm = 0,
-                last_type = Band.DENSITY_UNKNOWN,
-                next_type = Band.DENSITY_UNKNOWN;
+        byte last_arm = 0, next_arm = 0, last_type = Band.DENSITY_UNKNOWN, next_type = Band.DENSITY_UNKNOWN;
 
-        boolean top_closed = true,
-                bottom_closed = true;
+        boolean top_closed = true, bottom_closed = true;
 
         for (int i = 0; i < list.size(); ++i) {
             IntervalTreeNode node = (IntervalTreeNode) list.get(i);
@@ -750,41 +649,11 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
 
             last_arm = band.arm;
             last_type = band.density;
-
-            if (showLabels) {
-                String label = band.toString();
-                int yy = (y1 + y2) / 2;
-                // xbegin = labelBounds.x;
-                //xend = xbegin + metrics.stringWidth(label),
-                //dy = metrics.getHeight() / 2;
-
-                g.setColor(Color.black);
-                g.drawString(label, labelBounds.x, yy);
-                g.drawLine(
-                        labelBounds.x,
-                        yy,
-                        ideogramBounds.x + ideogramBounds.width,
-                        yy);
-            }
-        }
-        if (showMarkers) {
-            drawAberrations(g);
         }
 
         // draw chromosome name
-        String name;
-        switch (chromosome) {
-            case 23:
-                name = "Chr. X";
-                break;
-            case 24:
-                name = "Chr. Y";
-                break;
-            default:
-                name = "Chr. " + chromosome;
-        }
-        Font cfont = g.getFont().deriveFont(9.0f);
-        g.setFont(cfont);
+        String name = chromosome + "";
+        g.setFont(g.getFont().deriveFont(9.0f));
         FontMetrics cmetrics = g.getFontMetrics();
         g.setColor(Color.BLUE);
         g.drawString(name, (dim.width - cmetrics.stringWidth(name)) / 2, cmetrics.getHeight());
@@ -843,316 +712,19 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
     }
 
     private void drawInterval(Graphics g, Interval interval, int matches) {
-        int y1 = BaseToYCoord(interval.from), y2 = BaseToYCoord(interval.to);
-                
-        // create colours for all the possible sharing states 
-        // number of states == number of selected inds
-        // create a colour gradient
-        // getSegmentColor(matches)
-        float h = new Float(0.333);
-        float s = new Float(1);
-        float b = new Float(1/matches);
-        
-        System.out.println(h +" "+ s +" "+ b );
-        
-        g.setColor(Color.getHSBColor(h, s, b));
+        int y1 = BaseToYCoord(interval.from);
+        int y2 = BaseToYCoord(interval.to);
+        g.setColor(new Color(255/matches,255/matches,255));
         g.fillRect(rightMarkerBounds.x +5, y1, 5 * matches, y2 - y1);	// draw single marker		
     }
 
-    private void drawInterval(Graphics g, int column, Interval interval, int lineWidth, boolean show_band, Color band_color) {
-        int y1 = BaseToYCoord(interval.from),
-                y2 = BaseToYCoord(interval.to),
-                x = markerToXCoord(column),
-                x1 = markerToXCoord(-getNumLeft()),
-                x2 = markerToXCoord(getNumRight());
-
-        y2--;
-
-        boolean cutTop = false,
-                cutBot = false;
-
-        if (y1 < ideogramBounds.y) {
-            cutTop = true;
-            y1 = ideogramBounds.y;
-        }
-
-        if (y2 > ideogramBounds.y + ideogramBounds.height) {
-            cutBot = true;
-            y2 = ideogramBounds.y + ideogramBounds.height;
-        }
-
-        if (y2 - y1 < 1) {
-            y2 = y1 + 1;
-        }
-
-        g.fillRect(x - lineWidth / 2, y1, lineWidth, y2 - y1);	// draw single marker		
-
-        int dx = Math.max((int) (deltaX / 3), 1);
-
-        // draw cross line if the ends are cut
-        if (cutTop) {
-            g.drawLine(x - dx, y1 - dx, x + dx, y1 + dx);
-        }
-
-        if (cutBot) {
-            g.drawLine(x - dx, y2 - dx, x + dx, y2 + dx);
-        }
-
-        if (getShowDetails()) {
-            // draw line ends with higher details
-            if (!cutTop) //g.fillRect(x-dx1,y1,dx1+dx2,dy);
-            {
-                g.drawLine(x - dx, y1, x + dx, y1);
-            }
-
-            if (!cutBot) {
-                g.drawLine(x - dx, y2, x + dx, y2);
-            }
-        }
-
-
-        if (show_band) {
-            if (band_color != null) {
-                g.setColor(band_color);
-            }
-            if (!cutTop) {
-                g.drawLine(x1, y1, x2, y1);
-            }
-            if (!cutBot) {
-                g.drawLine(x1, y2, x2, y2);
-            }
-        }
-    }
-
-    /**
-     * Draws a single marker.
-     * 
-     * @param g
-     * @param marker
-     * @param column The column index (0..n-1)
-     * @param width The (line) width of the marker
-     * @param color_left Color of a loss
-     * @param color_right Color of a gain
-     * @param show_band Shows a band across the ideogram
-     * @param band_color Color of the band
-     */
-    private void drawMarker(Graphics g, Marker marker, int column, int width, Color color_left, Color color_right, boolean show_band, Color band_color) {
-        column = Math.abs(column) - 1;
-        if (marker.value == 2) {
-            return; // do not draw unchanged clones
-        }
-        if (!view.intersects(marker.interval)) {
-            return;
-        }
-
-        if (width <= 0) {
-            width = 1;
-        }
-
-        boolean left_side = marker.value < 2 || marker.value < 0,
-                right_side = marker.value > 2 || marker.value < 0;
-
-
-        if (marker.value < 0) {	// copy number undefined ()
-            color_left = Color.MAGENTA;
-            color_right = Color.MAGENTA;
-        } else {
-            if (marker.color != null) {
-                color_left = marker.color;
-                color_right = marker.color;
-            }
-            /*if( color_left == null ) 	{
-            color_left = new Color(0,90,0);
-            
-            }
-            if( color_right == null )  {
-            color_right = new Color(140,0,0);
-            }*/
-        }
-
-        if (left_side) {
-            g.setColor(color_left);
-            drawInterval(g, -(1 + column), marker.interval, width, show_band, band_color);
-        }
-
-        if (right_side) {
-            g.setColor(color_right);
-            drawInterval(g, (1 + column), marker.interval, width, show_band, band_color);
-        }
-    }
-
-    /**
-     * Finds for each MarkerCollection if it is empty or not and updates 
-     * the two BitSets leftVisible and rightVisible.
-     *
-     */
-    private void updateVisibility() {
-        leftVisible.clear();
-        rightVisible.clear();
-
-        if (!isCondensedMode()) {
-            leftVisible.set(0, getNumMarkers());
-            rightVisible.set(0, getNumMarkers());
-            return;
-        }
-
-        for (int i = 0; i < markers.size(); ++i) {
-            for (Marker marker : markers.get(i).markers) {
-                if (marker == null) {
-                    continue;
-                }
-                if (marker.value < 2 || marker.value < 0) {
-                    leftVisible.set(i);
-                }
-                if (marker.value > 2 || marker.value < 0) {
-                    rightVisible.set(i);
-                }
-
-                if (leftVisible.get(i) && rightVisible.get(i)) {
-                    break;
-                }
-            }
-        }
-    }
-
-    /**
-     * 
-     * @param markerIndex
-     * @return -1 if the index line is NOT found
-     */
-    public int markerToSampleIndex(int markerIndex) {
-        if (!isCondensedMode()) {
-            return Math.abs(markerIndex) - 1;
-        }
-
-        updateVisibility();
-
-        BitSet set = null;
-        if (markerIndex < 0) {
-            set = leftVisible;
-        } else {
-            set = rightVisible;
-        }
-
-        markerIndex = Math.abs(markerIndex);
-
-        for (int i = set.nextSetBit(0), column = 1; i >= 0; i = set.nextSetBit(i + 1), ++column) {
-            if (column == markerIndex) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * 
-     * @param sampleIndex
-     * @param leftSide
-     * @return 0 if there is no profile line for the given sample
-     */
-    public int sampleToMarkerIndex(int sampleIndex, boolean leftSide) {
-        if (sampleIndex < 0 || sampleIndex >= getMarkers().length) {
-            throw new IndexOutOfBoundsException("sampleIndex is out of bounds");
-        }
-
-        if (!isCondensedMode()) {
-            return leftSide ? -(1 + sampleIndex) : (1 + sampleIndex);
-        }
-
-        updateVisibility();
-
-        BitSet set = null;
-
-        if (leftSide) {
-            set = leftVisible;
-        } else {
-            set = rightVisible;
-        }
-
-        for (int i = set.nextSetBit(0), j = 1; i >= 0; i = set.nextSetBit(i + 1), ++j) {
-            if (i == sampleIndex) {
-                return leftSide ? -j : j;
-            }
-        }
-        return 0;
-    }
-
-    protected void drawAberrations(Graphics g) {
-        updateVisibility();
-
-        // left side
-        for (int i = leftVisible.nextSetBit(0), pos = -1; i >= 0; i = leftVisible.nextSetBit(i + 1), --pos) {
-            // find all markers in view
-            M = markers.get(i);
-            for (Marker marker : M.find(view)) {
-                if (marker == null) {
-                    continue;
-                }
-
-                Color color = mainWindow.parameters.getColor(marker.value, false);
-
-                if (marker.value != 2) {
-                    drawMarker(g, marker, pos, lineWidth, color, color, false, null);
-                }
-
-            }
-        }
-
-        // right side
-        for (int i = rightVisible.nextSetBit(0), pos = 1; i >= 0; i = rightVisible.nextSetBit(i + 1), ++pos) {
-            // find all markers in view
-            M = markers.get(i);
-            for (Marker marker : M.find(view)) {
-                if (marker == null) {
-                    continue;
-                }
-
-                Color color = mainWindow.parameters.getColor(marker.value, false);
-
-                if (marker.value != 2) {
-                    drawMarker(g, marker, pos, lineWidth, color, color, false, null);
-                }
-            }
-        }
-    }
-
     public Dimension updateLayout() {
-        //	FontMetrics metrics = g.getFontMetrics();
-        int height = scaleY(350);
-
-        // calculate widths of all 6 regions
-        // 1. leftMarkerBounds
-        // 2. leftInfoBounds (SNP)        
-        // 3. labelBounds
-        // 4. ideogramBounds
-        // 5. rightInfoBounds (genes)
-        // 6. rightMarkerBounds
-
-        if (showLabels) {
-            //labelBounds.width = (metrics.stringWidth("22q13.33a")*13)/12; // metrics.charWidth('X') * MAX_LABEL_LENGTH;
-            labelBounds.width = scaleX(20);
-        } else {
-            labelBounds.width = 0;
-        }
-
-
-        ideogramBounds.width = scaleX(20);
+        int height           = scaleY(350);
+        ideogramBounds.width = scaleX(15);
 
         deltaX = scaleX(5);
-        leftMarkerBounds.width = deltaX * getNumLeft() + scaleX(8);
-        rightMarkerBounds.width = deltaX * getNumRight() + scaleX(8);
-
         // compute x coordinates
         int x = 0;
-
-        leftMarkerBounds.x = x;
-        x += leftMarkerBounds.width;
-
-        leftInfoBounds.x = x;
-        x += leftInfoBounds.width;
-
-        labelBounds.x = x;
-        x += labelBounds.width;
 
         ideogramBounds.x = x;
         x += ideogramBounds.width;
@@ -1163,21 +735,8 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
         rightMarkerBounds.x = x;
         x += rightMarkerBounds.width;
 
-        // adapt heights + y coordinates
-
-        //ideogramBounds.height = Math.min( (height * 9) / 10, height - 20 );
-        //ideogramBounds.y = (height - ideogramBounds.height) / 2;
         ideogramBounds.y = scaleY(20); // 2*metrics.getHeight(); // there is a small label on the top
         ideogramBounds.height = height - ideogramBounds.y - scaleY(4 * 20); //(4*metrics.getHeight()); // there is a small label on to bottom
-
-        leftMarkerBounds.y = ideogramBounds.y;
-        leftMarkerBounds.height = ideogramBounds.height;
-
-        leftInfoBounds.y = ideogramBounds.y;
-        leftInfoBounds.height = ideogramBounds.height;
-
-        labelBounds.y = ideogramBounds.y;
-        labelBounds.height = ideogramBounds.height;
 
         rightInfoBounds.y = ideogramBounds.y;
         rightInfoBounds.height = ideogramBounds.height;
@@ -1265,10 +824,6 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
         paintBuffer = null;
         paintBufferValid = false;
 
-        addMouseListener(new IdeogramMouseListener());
-        addMouseMotionListener(new IdeogramMouseMotionListener());
-        addMouseWheelListener(new IdeogramMouseWheelListener());
-
         // fix tab button bug
         setFocusTraversalKeysEnabled(false);
 
@@ -1309,58 +864,6 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
             }
             return tip;
         }
-
-        // find marker(s)
-        int value = xCoordToMarker(p.x);
-
-        DecimalFormat format = new DecimalFormat("0.00");
-
-        int idx = Math.abs(value) - 1;
-        if (idx >= 0 && idx < markers.size()) {
-            MarkerCollection M = (MarkerCollection) markers.get(idx);
-            int marker_index = M.findNearest(bp, value > 0);
-            Marker marker = null;
-            if (marker_index >= 0) {
-                marker = (Marker) M.getMarkers().get(marker_index);
-            }
-            if (marker == null) {
-                return tip;
-            }
-
-            if (tip == null) {
-                tip = new String();
-            }
-            if (tip.length() > 0) {
-                tip += "\n";
-            }
-            if (marker.info != null) {
-                tip += marker.info + "\n";
-            }
-
-            tip += "[" + format.format((float) marker.interval.from / (float) 1000000) + " M - "
-                    + format.format((float) marker.interval.to / (float) 1000000) + " M ]\n";
-
-            // TODO: understand and change the following!!!
-			/*
-            if( idx < getMainWindow().dataModels.size() )
-            {
-            CopyNumberTransformer trf = (CopyNumberTransformer)getMainWindow().dataModels.get(idx);
-            Object val = trf.getDataModel().getValue(getMainWindow().comboMarker.getSelectedItem().toString(),marker_index);
-            if( val != null )
-            tip += val.toString();
-            }
-             */
-            /*
-            LinkedList list = M.find(new Interval(bp,bp)); // TODO: side???
-            Iterator iter = list.iterator();
-            while( iter.hasNext() )
-            {
-            Marker marker = (Marker)iter.next();
-            }
-             */
-
-        }
-
         return tip;
     }
 
@@ -1389,36 +892,6 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
             }
         }
 
-
-        // finds the nearest marker
-        if (!found) {
-            int markerIndex = xCoordToMarker(p.x),
-                    sampleIndex = markerToSampleIndex(markerIndex);
-
-            if (sampleIndex >= 0 && sampleIndex < markers.size()) {
-                MarkerCollection M = (MarkerCollection) markers.get(sampleIndex);
-
-                List<Marker> list = M.find(new Interval(bp, bp));
-
-                int idx = list.indexOf(getSelectedMarker());
-
-                if (idx >= 0) {	// cycle through selection
-                    setSelectedSample(list.get((idx + 1) % list.size()), sampleIndex);
-                } else {
-                    if (list.size() > 0) {
-                        setSelectedSample(list.get(0), sampleIndex);
-                    } else {
-                        int marker_index = M.findNearest(bp, markerIndex > 0);
-                        if (marker_index >= 0) {
-                            setSelectedSample(M.getMarkers().get(marker_index), sampleIndex);
-                        } else {
-                            setSelectedSample(null, sampleIndex);
-                        }
-                    }
-                }
-            }
-        }
-
         setActive(true);
     }
 
@@ -1443,17 +916,6 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
 
     public Marker getSelectedMarker() {
         return selectedMarker;
-    }
-
-    /**
-     * 
-     * @return The selected marker line
-     */
-    public int getSelectedMarkerIndex() {
-        if (selectedMarker == null) {
-            return 0;
-        }
-        return sampleToMarkerIndex(selectedSampleIndex, selectedMarker.value < 2);
     }
 
     /**
@@ -1503,176 +965,6 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
         repaint();
     }
 
-    /**
-     * draw marker lines and selected profile lines
-     */
-    public void paintBackgroundSelections(Graphics g) {
-        for (int i = leftVisible.nextSetBit(0), pos = -1; i >= 0; i = leftVisible.nextSetBit(i + 1), --pos) {
-            boolean sel = (i == selectedSampleIndex);
-            if (sel) {
-                g.setColor(colSampleSelected);
-            } else {
-                g.setColor(colSample);
-            }
-
-            // draw vertical orientation/marker profile lines
-            if (isShowProfileLines() || sel) {
-                int x1 = markerToXCoord(pos),
-                        y1 = ideogramBounds.y,
-                        y2 = ideogramBounds.y + ideogramBounds.height;
-
-                g.drawLine(x1, y1, x1, y2);
-            }
-        }
-
-        // right side
-        for (int i = rightVisible.nextSetBit(0), pos = 1; i >= 0; i = rightVisible.nextSetBit(i + 1), ++pos) {
-            boolean sel = (i == selectedSampleIndex);
-            if (sel) {
-                g.setColor(colSampleSelected);
-            } else {
-                g.setColor(colSample);
-            }
-
-            // draw vertical orientation/marker profile lines
-            if (isShowProfileLines() || sel) {
-                int x1 = markerToXCoord(pos),
-                        y1 = ideogramBounds.y,
-                        y2 = ideogramBounds.y + ideogramBounds.height;
-
-                g.drawLine(x1, y1, x1, y2);
-            }
-        }
-    }
-
-    public void paintForegroundSelections(Graphics graphics) {
-        if (selectedMarker != null) {
-            Color colLeft = null, colRight = null;
-
-            colLeft = mainWindow.parameters.getColor(selectedMarker.value, marker_state);
-            colRight = mainWindow.parameters.getColor(selectedMarker.value, marker_state);
-
-            drawMarker(graphics,
-                    selectedMarker,
-                    getSelectedMarkerIndex(),
-                    lineWidth, colLeft, colRight, true, null);
-        }
-    }
-
-    private class IdeogramMouseListener extends MouseAdapter {
-
-        public void mouseClicked(MouseEvent e) {
-            if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() >= 2) {
-                zoom(+1);
-            }
-        }
-        /*public void mouseEntered(MouseEvent e)
-        {
-        //IdeogramBean ideo = (IdeogramBean)e.getSource();
-        //ideo.requestFocusInWindow();
-        
-        }
-        
-        public void mouseExited(MouseEvent e)
-        {
-        //IdeogramBean ideo = (IdeogramBean)e.getSource();
-        //ideo.setActive(false);
-        }*/
-
-        public void mousePressed(MouseEvent e) {
-            IdeogramView ideo = (IdeogramView) e.getSource();
-            ideo.requestFocusInWindow();
-            if ((e.getModifiersEx() & MouseEvent.BUTTON3_DOWN_MASK) > 0) {
-                // open popup menu if desired
-                // select next marker
-                // ideo.selectPoint(e.getPoint());
-                //if(getSelectedMarker()==null || (Math.abs(xCoordToMarker(e.getX())) >= markers.size() && consensusMode) )
-
-                int idx = getSelectedSampleIndex();
-                boolean canMerge = false;
-                if (idx >= 0) {	// check if this data slot enables merging
-                    //DataSlot slot = dataSlots.get(idx);
-                    canMerge = true;
-                }
-
-                if (canMerge) {
-                    mainWindow.mergeMarkerItem.setEnabled(true);
-                    mainWindow.removeMarkerItem.setEnabled(true);
-                } else {
-                    mainWindow.mergeMarkerItem.setEnabled(false);
-                    mainWindow.removeMarkerItem.setEnabled(false);
-                }
-
-
-                mainWindow.popmenu.show(e.getComponent(), e.getX(), e.getY());
-            }
-
-            if ((e.getModifiersEx() & MouseEvent.BUTTON2_DOWN_MASK) > 0) {
-                ideo.resetView();
-
-                return;
-            }
-            if ((e.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) > 0) {
-                // select next marker
-                ideo.selectPoint(e.getPoint());
-                beginSelection(e.getPoint());
-            }
-        }
-
-        public void mouseReleased(MouseEvent event) {
-            if (isDragging) {
-                if (Math.abs(endPoint.y - beginPoint.y) < 5) {
-                    setRangeSelection(null);
-                }
-                isDragging = false;
-                if (getRangeSelection() != null) {
-                    zoom(-1);
-                }
-                firePropertyChange("isDragging", true, false);
-            }
-        }
-    }
-
-    private class IdeogramMouseMotionListener extends MouseMotionAdapter {
-
-        public void mouseMoved(MouseEvent e) {
-            /*
-            IdeogramBean ideo = (IdeogramBean) e.getSource();
-            Graphics g = ideo.getGraphics();
-            g.drawRect(e.getX() - 1, e.getY() - 1, 2, 2);
-             */
-        }
-
-        public void mouseDragged(MouseEvent event) {
-
-            if (!isDragging) {
-                isDragging = true;
-                firePropertyChange("isDragging", false, true);
-            }
-            endSelection(event.getPoint());
-        }
-    }
-
-    private class IdeogramMouseWheelListener
-            implements MouseWheelListener {
-
-        /**
-         * Scroll and Zoom into the ideogram.
-         * 
-         * @see java.awt.event.MouseWheelListener#mouseWheelMoved(java.awt.event.MouseWheelEvent)
-         */
-        public void mouseWheelMoved(MouseWheelEvent event) {
-            IdeogramView ideo = (IdeogramView) event.getSource();
-            int dy = event.getWheelRotation();
-
-            if (event.isShiftDown()) {
-                ideo.zoom(dy);
-            } else {
-                ideo.scroll(dy);
-            }
-        }
-    }
-
     /* (non-Javadoc)
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
@@ -1692,14 +984,6 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
         long delta = view.getLength(),
                 start = pos - delta / 2;
         setView(new Interval(start, start + delta));
-    }
-
-    public IdeogramMainWindow getMainWindow() {
-        return mainWindow;
-    }
-
-    public void setMainWindow(IdeogramMainWindow mainWindow) {
-        this.mainWindow = mainWindow;
     }
 
     public void scroll(int dy) {
@@ -1780,16 +1064,6 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
         updateSize();
     }
 
-    public int getNumLeft() {
-        updateVisibility();
-        return leftVisible.cardinality();
-    }
-
-    public int getNumRight() {
-        updateVisibility();
-        return rightVisible.cardinality();
-    }
-
     public void directPaintToGraphics(Graphics graphics, int width, int height) {
         //
         double old_scaleX = scaleX,
@@ -1797,7 +1071,7 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
 
         updateLayout();
 
-        paintBackgroundSelections(graphics);
+
         directPaint(graphics);
 
         scaleX = old_scaleX;
@@ -1830,7 +1104,7 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
         g2.scale(scale, scale);
         try {
             //directPaintToGraphics(g2, res_x, res_y);
-            paintBackgroundSelections(g2);
+           
             directPaint(g2);
         } catch (Exception e) {
             throw new PrinterException("Exception while printing\n" + e.getMessage());
