@@ -12,6 +12,7 @@ public class Variant {
 	public String qual;
 	public String filter;
         public double freq;
+        public boolean freqFiltered;
 	public HashMap<String, String> info;
 	public ArrayList<String> geno;
 	
@@ -20,7 +21,6 @@ public class Variant {
 	}
 	
 	public Variant(String vcfLine) {
-		
 		String values[] = vcfLine.split("\t");
 		String chr_s = values[0];
 		String pos_s = values[1];
@@ -138,6 +138,9 @@ public class Variant {
 		variant.add(getAlt());
 		variant.add(getQual());
 		variant.add(getFilter());
+                if (freqFiltered) {
+                    variant.add(getFreq());
+                }
 		return variant;
 	}
         
@@ -150,7 +153,9 @@ public class Variant {
 		variant.add(getAlt());
 		variant.add(getQual());
 		variant.add(getFilter());
-		
+		if (freqFiltered) {
+                    variant.add(getFreq());
+                }
 		for (String s : selectedCols) {
 			String value = getInfo().get(s);
 			if (value != null) {
@@ -165,5 +170,11 @@ public class Variant {
 
     void setFreq(Double f) {
         freq = f;
+        freqFiltered = true;
     }
+    
+    public Double getFreq() {
+        return freq;
+    }
+    
 }
