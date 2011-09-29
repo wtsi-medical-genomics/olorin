@@ -3,8 +3,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Vector;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.zip.GZIPInputStream;
 
 
@@ -12,8 +11,8 @@ import java.util.zip.GZIPInputStream;
 public class FlowFile {
 
 	BufferedReader ffr;
-	Hashtable<String, Chromosome> individuals;
-	Vector<Integer> positions;
+	HashMap<String, Chromosome> individuals;
+	ArrayList<Integer> positions;
 	
 	public FlowFile(String fileName) throws Exception {
 		if (fileName.endsWith(".gz")) {
@@ -25,7 +24,7 @@ public class FlowFile {
 	
 	public void parseFlow() {
 		String line;
-		individuals = new Hashtable<String, Chromosome> ();
+		individuals = new HashMap<String, Chromosome> ();
 		ArrayList<Segment> matHap = null;
 		ArrayList<Segment> patHap = null;
 		
@@ -95,11 +94,11 @@ public class FlowFile {
 		return positions.get(i-2);
 	}
 
-	public Hashtable<String, Chromosome> getSamples() {
+	public HashMap<String, Chromosome> getSamples() {
 		return individuals;
 	}
 
-	public void setPos(Vector<Integer> vector) {
+	public void setPos(ArrayList<Integer> vector) {
 		positions = vector;
 	}
 	
