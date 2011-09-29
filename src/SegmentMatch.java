@@ -3,7 +3,7 @@ import java.util.Collection;
 import java.util.Vector;
 
 
-public class SegmentMatch<t> extends Segment {
+public class SegmentMatch<t> extends Segment implements Comparable<SegmentMatch> {
 
 	ArrayList<Integer> ids;
 	String chr;
@@ -33,4 +33,14 @@ public class SegmentMatch<t> extends Segment {
 		return segment;
 	}
 	
+        @Override
+	public int compareTo(SegmentMatch s) {
+		if (this.getIds().size() < s.getIds().size()) {
+			return -1;
+		} else if (this.getIds().size() > s.getIds().size()) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
 }
