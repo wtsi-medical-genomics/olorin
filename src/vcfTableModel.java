@@ -9,11 +9,19 @@ class vcfTableModel extends AbstractTableModel {
 	ArrayList<String> selectedCols;
 	ArrayList<Variant> vcfData;
 	ArrayList<String> columns;
+        String freqPop;
 	
 	public vcfTableModel (ArrayList<Variant> d, ArrayList<String> sc) {
 		selectedCols = sc;
 		vcfData = d;
 		makeCols();
+	}
+        
+        public vcfTableModel (ArrayList<Variant> d, ArrayList<String> sc, String p) {
+		selectedCols = sc;
+		vcfData = d;
+                freqPop = p;
+		makeCols(p);
 	}
 	
 	public void makeCols () {
@@ -37,6 +45,24 @@ class vcfTableModel extends AbstractTableModel {
 		// add the format info to tooltips for over the genotype
 		
 	}
+        
+        private void makeCols(String p) {
+            columns = new ArrayList<String> ();
+		//add mandatory columns
+		columns.add("#");
+		columns.add("CHROM");
+		columns.add("POS");
+		columns.add("ID");
+		columns.add("REF");
+		columns.add("ALT");
+		columns.add("QUAL");
+		columns.add("FILTER");
+                columns.add(freqPop);
+		
+		for (String s : selectedCols) {
+			columns.add(s);
+		}
+        }
     
     public int getColumnCount() {
         return columns.size();
@@ -55,12 +81,12 @@ class vcfTableModel extends AbstractTableModel {
     		// row number - however does not work if the data is re-sorted
     		return row+1;
     	} else {
-    		return vcfData.get(row).getArray(selectedCols).get(col-1);
+            return vcfData.get(row).getArray(selectedCols).get(col-1);
     	}
     }
 
     public Class getColumnClass(int c) {
         return getValueAt(0, c).getClass();
-    }    
+    }
 
 }
