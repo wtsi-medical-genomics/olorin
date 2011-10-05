@@ -1,6 +1,7 @@
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class DataDirectory {
@@ -10,6 +11,7 @@ public class DataDirectory {
     String ped;
     HashMap<String, Sample> samples;
     HashMap<String, Boolean> knownChroms;
+    ArrayList<String> sequencedInds;
 
     DataDirectory(String dir) throws Exception {
 
@@ -66,12 +68,36 @@ public class DataDirectory {
         PedFile pedFile = new PedFile(directory.getAbsolutePath() + File.separator + pedName);
         ped = pedFile.makeCSV();
         printLog("Found and parsed ped file: " + pedName);
-
+        
+        ArrayList<String> vcfSamples = vcf.getMeta().getSamples();
+        HashMap<String, Integer> vcfSampleHash = new HashMap<String, Integer> ();
+        int counter = 0;
+        for (String s: vcfSamples) {
+            counter++;
+            vcfSampleHash.put(s, counter);
+        }
+        
+        ArrayList<String> pedSamples = pedFile.getSamples();
+        ArrayList<String> sequencedInds = new ArrayList<String> ();
+        for (String s: pedSamples) {
+            if (vcfSampleHash.containsKey(s)) {
+                sequencedInds.add(s);
+            }
+        }
+        
+        if (sequencedInds.size() == 0) {
+            //no matching sample ids between the vcf and ped file
+            printLog("Error: No sequenced sample in the family");
+        }
     }
 
     public void printLog(String text) {
-        GUI.logPanel.append(text + "\n");
-        GUI.logPanel.repaint();
+        Olorin.logPanel.append(text + "\n");
+        Olorin.logPanel.repaint();
+    }
+
+    ArrayList getSequencedInds() {
+        return sequencedInds;
     }
 
     class ExtensionFilter implements FilenameFilter {
