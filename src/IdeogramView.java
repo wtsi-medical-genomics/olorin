@@ -133,6 +133,7 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
     // for drawing segments
     private boolean drawSegments;
     private MarkerCollection segments;
+    private int minMatches;
     
 
     public IdeogramView() {
@@ -170,8 +171,9 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
         this.db = db;
     }
 
-    public void setSegments (MarkerCollection mc) {
+    public void setSegments (MarkerCollection mc, int mm) {
         segments = mc;
+        minMatches = mm;
         drawSegments = true;
         
     }
@@ -714,8 +716,12 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
     private void drawInterval(Graphics g, Interval interval, int matches) {
         int y1 = BaseToYCoord(interval.from);
         int y2 = BaseToYCoord(interval.to);
-        g.setColor(new Color(255/matches,255/matches,255));
-        g.fillRect(rightMarkerBounds.x +5, y1, 5 * matches, y2 - y1);	// draw single marker		
+        if (matches >= minMatches) {
+            g.setColor(Color.GREEN);
+        } else {
+            g.setColor(new Color(255/matches,255/matches,255));
+        }
+        g.fillRect(rightMarkerBounds.x +5, y1, 6 * matches, y2 - y1);	// draw single marker		
     }
 
     public Dimension updateLayout() {
