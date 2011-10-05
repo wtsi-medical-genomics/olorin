@@ -1,6 +1,7 @@
 
 import java.awt.Cursor;
 import java.util.ArrayList;
+import java.util.HashMap;
 import javax.swing.JFileChooser;
 import javax.swing.JSlider;
 
@@ -200,9 +201,15 @@ private void freqCutoffFieldActionPerformed(java.awt.event.ActionEvent evt) {//G
 private void okButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButActionPerformed
     ArrayList<Boolean> selectedCols = ((FilterTableModel) vcfTable.getModel()).getSelected();
     selectedInfo = new ArrayList<String> ();
+        ArrayList<HashMap<String, String>> infos = meta.getInfo();
+        HashMap<String, String> info;
+        String id;
     for (int i=0; i < meta.info.size(); i++ ) {
         if (selectedCols.get(i)) {
-            selectedInfo.add(meta.getInfo().get(i).get("ID"));
+            info = infos.get(i);
+            id = info.get("ID");
+            selectedInfo.add(id);
+//            selectedInfo.add(meta.getInfo().get(i).get("ID"));
         }
     }
     setFreqFile(freqText.getText());
