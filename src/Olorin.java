@@ -1,4 +1,19 @@
 
+import ca.odell.glazedlists.BasicEventList;
+import ca.odell.glazedlists.EventList;
+import ca.odell.glazedlists.FilterList;
+import ca.odell.glazedlists.GlazedLists;
+import ca.odell.glazedlists.SortedList;
+import ca.odell.glazedlists.TextFilterator;
+import ca.odell.glazedlists.gui.TableFormat;
+import ca.odell.glazedlists.matchers.AbstractMatcherEditor;
+import ca.odell.glazedlists.matchers.CompositeMatcherEditor;
+import ca.odell.glazedlists.matchers.Matcher;
+import ca.odell.glazedlists.matchers.ThreadedMatcherEditor;
+import ca.odell.glazedlists.swing.EventListModel;
+import ca.odell.glazedlists.swing.EventTableModel;
+import ca.odell.glazedlists.swing.TableComparatorChooser;
+import ca.odell.glazedlists.swing.TextComponentMatcherEditor;
 import ideogram.Marker;
 import ideogram.MarkerCollection;
 import ideogram.db.IdeogramDB;
@@ -44,6 +59,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.zip.GZIPInputStream;
 import javax.imageio.ImageIO;
+import org.apache.commons.lang3.ArrayUtils;
 import util.FileFormatException;
 
 public class Olorin extends JFrame implements ActionListener {
@@ -57,6 +73,7 @@ public class Olorin extends JFrame implements ActionListener {
     JPanel pedigreePanel;
     JScrollPane ideogramPane;
     JScrollPane variantsPane;
+    JPanel filterPanel;
     JPanel contentPanel;
     JSplitPane mainPane;
     static JTextArea logPanel;
@@ -131,8 +148,8 @@ public class Olorin extends JFrame implements ActionListener {
         variantsPane.setBorder(new LineBorder(Color.BLACK));
         variantsPane.setBackground(Color.WHITE);
 
-        // add a pane next to the log pane that contains a table of the segment including sizes
-        // also generate a genome wide plot of the number of chromosome matching 
+        filterPanel = new JPanel();
+
         ideogramPane = new JScrollPane();
         ideogramPane.setBorder(new LineBorder(Color.BLACK));
         ideogramPane.setBackground(Color.WHITE);
@@ -166,12 +183,12 @@ public class Olorin extends JFrame implements ActionListener {
         upperPane.setOneTouchExpandable(true);
         upperPane.setDividerLocation(500);
 
-        JSplitPane lowerPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, loggingPane, ideogramPane);
+        JSplitPane lowerPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, filterPanel, ideogramPane);
         lowerPane.setOneTouchExpandable(true);
         lowerPane.setDividerLocation(500);
 
 //        mainPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, upperPane, lowerPane);
-        mainPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, upperPane, ideogramPane);
+        mainPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, upperPane, lowerPane);
 
         contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
@@ -304,14 +321,68 @@ public class Olorin extends JFrame implements ActionListener {
                                 // TODO Auto-generated catch block
                             }
                             if (vcfData != null) {
-                                variantsTable = new JTable(new vcfTableModel(vcfData, fsd.getSelectedInfo()));
-                                variantsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-                                TableColumnAdjuster tca = new TableColumnAdjuster(variantsTable);
-                                tca.setColumnDataIncluded(true);
-                                tca.adjustColumns();
-                                variantsTable.setFillsViewportHeight(true);
-                                variantsTable.setAutoCreateRowSorter(true);
-                                variantsPane.setViewportView(variantsTable);
+
+                                //trying out glazedlists for the variants table
+                                EventList<Variant> variants = GlazedLists.threadSafeList(new BasicEventList<Variant>());
+                                variants.addAll(vcfData);
+
+                                JTextField idFilterField = new JTextField(5);
+                                TextFilterator idFilterator = new TextFilterator() {
+
+                                    @Override
+                                    public void getFilterStrings(java.util.List baseList, Object e) {
+                                        Variant variant = (Variant) e;
+                                        baseList.add(variant.getID());
+                                    }
+                                };
+
+                                TextComponentMatcherEditor idmatcherEditor = new TextComponentMatcherEditor(idFilterField, idFilterator);
+                                final QualityMatcherEditor qualityMatcherEditor = new QualityMatcherEditor();
+
+                                
+                                
+                                
+                                //first filtering action
+                                EventList matcherEditors = GlazedLists.threadSafeList(new BasicEventList());
+                                
+                                
+                                //add all the matcher editiors to the event list
+                                //default columns first
+                                matcherEditors.add(idmatcherEditor);
+                                matcherEditors.add(qualityMatcherEditor);
+                                
+                                // there are two filter types text and numerical just need to decide which to use
+                                // type=string - text
+                                // type=flag - text
+                                // type=int - numerical
+                                // type= float - numerical
+                                // for numerical types we need a sign chooser and a slider from min to max
+                                // for text we just need a textbox
+                                
+//                                for (colums) {
+//                                    get the 
+//                                }
+                                
+                                
+                                // last filtering action
+                                FilterList filteredVariants = new FilterList(variants, new CompositeMatcherEditor(matcherEditors));
+
+                                //repaint the filterPanel each time find segments is run as the columns can change
+                                filterPanel.removeAll();
+                                filterPanel.add(new JLabel("Filter ID:"));
+                                filterPanel.add(idFilterField);
+                                filterPanel.add(new JLabel("Quality"));
+                                filterPanel.add(qualityMatcherEditor.getSignChooser());
+                                filterPanel.add(qualityMatcherEditor.getCutoffChooser());
+                                
+                                SortedList sortedFilteredVariants = new SortedList(filteredVariants, null);
+                                                                
+                                JTable t = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo())));
+                                t.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
+                                new TableComparatorChooser(t, sortedFilteredVariants, true);
+                                
+                                variantsPane.setViewportView(t);
                                 contentPanel.revalidate();
                                 contentPanel.repaint();
                                 exportVariants.setEnabled(true);
@@ -482,7 +553,7 @@ public class Olorin extends JFrame implements ActionListener {
         view.addRule(new ShapeRule("Sex", "2", new SymbolSexMale()));
         view.addRule(new ShapeRule("Sex", "-1", new SymbolSexUndesignated()));
         view.setSelectionEnabled(true);
-        
+
         view.addNodeListener(
                 new NodeListener() {
 
@@ -510,9 +581,9 @@ public class Olorin extends JFrame implements ActionListener {
                                 }
                                 filterList.put(idSelected, 1);
                             }
-                            
-                            
-                            
+
+
+
                         }
                     }
                 });
@@ -538,4 +609,104 @@ public class Olorin extends JFrame implements ActionListener {
         }
         return buffer.toString();
     }
+
+    private static class QualityMatcherEditor extends AbstractMatcherEditor implements ActionListener {
+
+        private JComboBox signChooser;
+        private JTextField qualityValue;
+
+        public QualityMatcherEditor() {
+            this.signChooser = new JComboBox(new Object[]{">", "<"});
+            this.signChooser.addActionListener(this);
+            this.qualityValue = new JTextField(5);
+            qualityValue.setText("0.0");
+            this.qualityValue.addActionListener(this);
+        }
+
+        public Component getSignChooser() {
+            return this.signChooser;
+        }
+
+        public Component getCutoffChooser() {
+            return this.qualityValue;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            final String sign = (String) this.signChooser.getSelectedItem();
+            final String cutoff = (String) this.qualityValue.getText();
+            if (sign == null) {
+                this.fireMatchAll();
+            } else if (sign != null && cutoff != null) {
+                this.fireChanged(new QualityMatcher(sign, cutoff));
+            }
+        }
+
+        private static class QualityMatcher implements Matcher {
+
+            private final String sign;
+            private final String cutoff;
+
+            public QualityMatcher(String sign, String cutoff) {
+                this.sign = sign;
+                this.cutoff = cutoff;
+            }
+
+            @Override
+            public boolean matches(Object item) {
+                final Variant variant = (Variant) item;
+                if (sign.matches("<")) {
+                    if (Double.parseDouble(variant.getQual()) < Double.parseDouble(cutoff)) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else if (sign.matches(">")) {
+                    if (Double.parseDouble(variant.getQual()) > Double.parseDouble(cutoff)) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+        }
+    }
+
+    public static class VariantTableFormat implements TableFormat {
+        
+        private ArrayList<String> usrSelectedCols;
+        private ArrayList<String> cols;
+        
+        VariantTableFormat(ArrayList<String> selectedCols) {
+            usrSelectedCols = selectedCols;
+            cols = new ArrayList();
+            cols.add("Chromosome");
+            cols.add("Position");
+            cols.add("ID");
+            cols.add("Ref");
+            cols.add("Alt");
+            cols.add("Quality");
+            cols.add("Filter");
+            cols.addAll(usrSelectedCols);
+        }
+        
+        @Override
+        public int getColumnCount() {
+            return cols.size();
+        }
+
+        @Override
+        public String getColumnName(int i) {
+            return cols.get(i);           
+        }
+
+        @Override
+        public Object getColumnValue(Object e, int i) {
+            Variant v = (Variant) e;
+            return v.getArray(usrSelectedCols).get(i);
+        }
+    }
+        
 }
