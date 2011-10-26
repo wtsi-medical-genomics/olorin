@@ -34,7 +34,7 @@ public class VCF {
         // die "Not a valid VCF" unless the input vcf has at least these two lines 
     }
     
-    public ArrayList<Variant> getVariants(ArrayList<SegmentMatch> matches, int matchNum) throws IOException {
+    public ArrayList<Variant> getVariants(ArrayList<SegmentMatch> matches, int matchNum, ArrayList<String> selectedCols) throws IOException {
         
         ArrayList<Variant> variants = new ArrayList<Variant>();
         
@@ -46,7 +46,7 @@ public class VCF {
                     if (i.next() != null) {
                         String vcfLine = i.next();
                         while (vcfLine != null) {
-                            variants.add(new Variant(vcfLine));
+                            variants.add(new Variant(vcfLine, selectedCols));
                             vcfLine = i.next();
                         }
                     }
