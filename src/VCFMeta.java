@@ -1,105 +1,163 @@
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
-
 public class VCFMeta {
-	
-	ArrayList<HashMap<String, String>> info;
-	ArrayList<HashMap<String, String>> filter;
-	ArrayList<HashMap<String, String>> format;
-	HashMap<String,String> other;
-	ArrayList<String> samples;
-	ArrayList<String> infoIds;
-	
-	// replace the arraylists with info, filter and format objects?
-	
-	public VCFMeta() {
-		info   = new ArrayList<HashMap<String,String>> ();
-		filter = new ArrayList<HashMap<String,String>> ();
-		format = new ArrayList<HashMap<String,String>> ();
-		other  = new HashMap<String,String> ();
-		infoIds = new ArrayList<String> ();
-	}
-	
-	public void add (String s) {
-		if (s.startsWith("##")) {
-			s = s.substring(2);
-			if (s.startsWith("INFO")) {
-				String[] values = s.trim().split("[<>]");
-				//split on the comma only if that comma has zero, or an even number of quotes in ahead of it
-				// for explaination see here http://stackoverflow.com/questions/1757065/java-splitting-a-comma-separated-string-but-ignoring-commas-in-quotes
-				String[] values2 = values[1].split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
-				HashMap ht = new HashMap<String,String> ();
-				for (String val : values2) {
-					if (val.contains("=")) {
-						String[] values3 = val.split("=");
-						if (values3[0].matches("ID")) {
-							infoIds.add(values3[1]);
-						}
-						ht.put(values3[0], values3[1]);
-					} else {
-						ht.put(val, "true");
-					}
-				}
-				info.add(ht);
-			} else if (s.startsWith("FILTER")) {
-				String[] values = s.trim().split("[<>]");
-				String[] values2 = values[1].split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
-				HashMap ht = new HashMap<String,String> ();
-				for (String val : values2) {
-					String[] values3 = val.split("=");
-					ht.put(values3[0], values3[1]);
-				}
-				filter.add(ht);
-			} else if (s.startsWith("FORMAT")) {
-				String[] values = s.trim().split("[<>]");
-				String[] values2 = values[1].split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
-				HashMap ht = new HashMap<String,String> ();
-				for (String val : values2) {
-					String[] values3 = val.split("=");
-					ht.put(values3[0], values3[1]);
-				}
-				format.add(ht);
-			} else {
-				String[] values = s.trim().split("=");
-				other.put(values[0], values[1]);
-			}
-		} else if (s.startsWith("#")) {
-			s = s.substring(1);
-			// if there are format fields then there are genotypes in the file
-			// so parse the sample ids
-			if (format.size() > 0) {
-				samples = new ArrayList<String> ();
-				String[] values = s.trim().split("\t");
-				for (int i = 9; i < values.length; i++) {
-					samples.add(values[i]);
-				}
-			}
-		}
-	}
 
-	public String getFileFormat() {
-		return other.get("fileformat");
-	}
+    ArrayList<HashMap<String, String>> info;
+    HashMap<String, Info> infoObjects;
+    ArrayList<HashMap<String, String>> filter;
+    ArrayList<HashMap<String, String>> format;
+    HashMap<String, String> other;
+    ArrayList<String> samples;
+    ArrayList<String> infoIds;
 
-	public ArrayList<HashMap<String,String>> getInfo() {
-		return info;
-	}
+    // replace the arraylists with info, filter and format objects?
+    public VCFMeta() {
+        info = new ArrayList<HashMap<String, String>>();
+        infoObjects = new HashMap<String, Info>();
+        filter = new ArrayList<HashMap<String, String>>();
+        format = new ArrayList<HashMap<String, String>>();
+        other = new HashMap<String, String>();
+        infoIds = new ArrayList<String>();
+    }
 
-	public ArrayList<HashMap<String,String>> getFilter() {
-		return filter;
-	}
+    public void add(String s) {
+        if (s.startsWith("##")) {
+            s = s.substring(2);
+            if (s.startsWith("INFO")) {
+                String id = null;
+                String[] values = s.trim().split("[<>]");
+                //split on the comma only if that comma has zero, or an even number of quotes in ahead of it
+                // for explaination see here http://stackoverflow.com/questions/1757065/java-splitting-a-comma-separated-string-but-ignoring-commas-in-quotes
+                String[] values2 = values[1].split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+                HashMap ht = new HashMap<String, String>();
+                Info inf = new Info();
+                for (String val : values2) {
+                    if (val.contains("=")) {
+                        String[] values3 = val.split("=");
+                        if (values3[0].matches("ID")) {
+                            id = values3[1];
+                            inf.setId(id);
+                            infoIds.add(values3[1]);
+                        } else if (values3[0].matches("Number")) {
+                            inf.setNumber(values3[1]);
+                        } else if (values3[0].matches("Type")) {
+                            inf.setType(values3[1]);
+                        } else if (values3[0].matches("Decription")) {
+                            inf.setDescription(values3[1]);
+                        }
+                        ht.put(values3[0], values3[1]);
+                    } else {
+                        ht.put(val, "true");
+                    }
+                }
+                info.add(ht);
+                infoObjects.put(id, inf);
+            } else if (s.startsWith("FILTER")) {
+                String[] values = s.trim().split("[<>]");
+                String[] values2 = values[1].split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+                HashMap ht = new HashMap<String, String>();
+                for (String val : values2) {
+                    String[] values3 = val.split("=");
+                    ht.put(values3[0], values3[1]);
+                }
+                filter.add(ht);
+            } else if (s.startsWith("FORMAT")) {
+                String[] values = s.trim().split("[<>]");
+                String[] values2 = values[1].split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+                HashMap ht = new HashMap<String, String>();
+                for (String val : values2) {
+                    String[] values3 = val.split("=");
+                    ht.put(values3[0], values3[1]);
+                }
+                format.add(ht);
+            } else {
+                String[] values = s.trim().split("=");
+                other.put(values[0], values[1]);
+            }
+        } else if (s.startsWith("#")) {
+            s = s.substring(1);
+            // if there are format fields then there are genotypes in the file
+            // so parse the sample ids
+            if (format.size() > 0) {
+                samples = new ArrayList<String>();
+                String[] values = s.trim().split("\t");
+                for (int i = 9; i < values.length; i++) {
+                    samples.add(values[i]);
+                }
+            }
+        }
+    }
 
-	public ArrayList<HashMap<String,String>> getFormat() {
-		return format;
-	}
+    public HashMap<String, Info> getInfoObjects() {
+        return infoObjects;
+    }
 
-	public ArrayList<String> getSamples() {
-		return samples;
-	}
+    public String getFileFormat() {
+        return other.get("fileformat");
+    }
 
-	public ArrayList<String> getInfoIds() {
-		return infoIds;
-	}
+    public ArrayList<HashMap<String, String>> getInfo() {
+        return info;
+    }
 
+    public ArrayList<HashMap<String, String>> getFilter() {
+        return filter;
+    }
+
+    public ArrayList<HashMap<String, String>> getFormat() {
+        return format;
+    }
+
+    public ArrayList<String> getSamples() {
+        return samples;
+    }
+
+    public ArrayList<String> getInfoIds() {
+        return infoIds;
+    }
+
+    public static class Info {
+
+        String id;
+        String number;
+        String type;
+        String description;
+
+        public Info() {
+        }
+        
+        public String getDescription() {
+            return description;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getNumber() {
+            return number;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public void setNumber(String number) {
+            this.number = number;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+    }
 }
