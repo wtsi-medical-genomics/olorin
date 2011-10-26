@@ -2,35 +2,34 @@ import java.util.ArrayList;
 
 import javax.swing.table.AbstractTableModel;
 
-
 class FilterTableModel extends AbstractTableModel {
-	
-	VCFMeta meta;
-	ArrayList<String> columns;
-	ArrayList<Boolean> selected;
-	
-	public FilterTableModel (VCFMeta m) {
-		meta = m;
-		makeCols();
-		selected = new ArrayList<Boolean> ();
-		for (int i=0; i < meta.info.size(); i++ ) {
-			selected.add(false);
-		}
-	}
-	
-	public void makeCols () {
-		columns = new ArrayList<String> ();
-		columns.add("ID");
-		columns.add("Description");
-		columns.add("");			
-	}
-    
+
+    VCFMeta meta;
+    ArrayList<String> columns;
+    ArrayList<Boolean> selected;
+
+    public FilterTableModel(VCFMeta m) {
+        meta = m;
+        makeCols();
+        selected = new ArrayList<Boolean>();
+        for (int i = 0; i < meta.info.size(); i++) {
+            selected.add(false);
+        }
+    }
+
+    public void makeCols() {
+        columns = new ArrayList<String>();
+        columns.add("ID");
+        columns.add("Description");
+        columns.add("");
+    }
+
     public int getColumnCount() {
         return columns.size();
     }
 
     public int getRowCount() {
-    	return meta.getInfo().size();
+        return meta.getInfo().size();
     }
 
     public String getColumnName(int col) {
@@ -38,15 +37,15 @@ class FilterTableModel extends AbstractTableModel {
     }
 
     public Object getValueAt(int row, int col) {
-    	if (col == 0) {
-    		return meta.getInfo().get(row).get("ID");
-    	} else if (col == 1) {
-    		return meta.getInfo().get(row).get("Description");
-    	} else {
-    		return selected.get(row);
-    	}
+        if (col == 0) {
+            return meta.getInfo().get(row).get("ID");
+        } else if (col == 1) {
+            return meta.getInfo().get(row).get("Description");
+        } else {
+            return selected.get(row);
+        }
     }
-    
+
     public Class getColumnClass(int c) {
         return getValueAt(0, c).getClass();
     }
@@ -62,19 +61,39 @@ class FilterTableModel extends AbstractTableModel {
     }
 
     public void setValueAt(Object value, int row, int col) {
-    	if (col == 2) {
-    		if (selected.get(row)) {
-    			selected.set(row, false);
-    		} else {
-    			selected.set(row, true);	
-    		}
-    	}
+        if (col == 2) {
+            if (selected.get(row)) {
+                selected.set(row, false);
+            } else {
+                selected.set(row, true);
+            }
+        }
         fireTableCellUpdated(row, col);
     }
-    
-    public ArrayList<Boolean> getSelected () {
-    	return selected;
-    }
-  
 
+    public void setSelected(int row, int col) {
+        if (col == 2) {
+            selected.set(row, true);
+        }
+        fireTableCellUpdated(row, col);
+    }
+
+    public ArrayList<Boolean> getSelected() {
+        return selected;
+    }
+
+    public void clearAll(int row) {
+        if (selected.get(row)) {
+            selected.set(row, false);
+        }
+        fireTableCellUpdated(row, 2);
+    }
+
+    public void selectAll(int row) {
+        //loop through all rows
+        if (!selected.get(row)) {
+            selected.set(row, true);
+        }
+        fireTableCellUpdated(row, 2);
+    }
 }
