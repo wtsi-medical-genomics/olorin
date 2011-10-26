@@ -27,6 +27,7 @@ public class FindSegmentsDialog3 extends javax.swing.JDialog {
     private int minMatches;
     private double freqCutoff;
     private String freqFile;
+    private ArrayList<Boolean> selectedCols;
 
     /** Creates new form FindSegmentsDialog3 */
     public FindSegmentsDialog3(java.awt.Frame parent, boolean modal) {
@@ -34,11 +35,12 @@ public class FindSegmentsDialog3 extends javax.swing.JDialog {
         initComponents();
     }
 
-    FindSegmentsDialog3(int s, VCFMeta m) {
+    FindSegmentsDialog3(int s, VCFMeta m, ArrayList<Boolean> oldSelectedCols) {
         meta = m;
         selected = s;
-        setMinMatches(selected);
+        setMinMatches(selected);        
         initComponents();
+        setOldSelectedCols(oldSelectedCols);
     }
 
     /** This method is called from within the constructor to
@@ -65,6 +67,8 @@ public class FindSegmentsDialog3 extends javax.swing.JDialog {
         vcfTable = new javax.swing.JTable();
         cancelBut = new javax.swing.JButton();
         okBut = new javax.swing.JButton();
+        clearAllBut = new javax.swing.JToggleButton();
+        selectAllBut = new javax.swing.JToggleButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -106,20 +110,20 @@ public class FindSegmentsDialog3 extends javax.swing.JDialog {
                         .add(filteringPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                             .add(minMatchSlider, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                             .add(jLabel1)
-                            .add(jSeparator1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 423, Short.MAX_VALUE))
-                        .add(60, 60, 60))
+                            .add(jSeparator1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE))
+                        .add(63, 63, 63))
                     .add(filteringPanelLayout.createSequentialGroup()
                         .add(freqFilterBut)
-                        .addContainerGap(280, Short.MAX_VALUE))
+                        .addContainerGap(288, Short.MAX_VALUE))
                     .add(filteringPanelLayout.createSequentialGroup()
                         .add(filteringPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
                             .add(org.jdesktop.layout.GroupLayout.LEADING, freqCutoffField, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                             .add(jLabel3, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .add(org.jdesktop.layout.GroupLayout.LEADING, freqText)
                             .add(org.jdesktop.layout.GroupLayout.LEADING, jLabel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 4, Short.MAX_VALUE)
+                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .add(openFreqBut)
-                        .add(188, 188, 188))))
+                        .add(191, 191, 191))))
         );
         filteringPanelLayout.setVerticalGroup(
             filteringPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -168,15 +172,33 @@ public class FindSegmentsDialog3 extends javax.swing.JDialog {
             }
         });
 
+        clearAllBut.setText("Clear All");
+        clearAllBut.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                clearAllButActionPerformed(evt);
+            }
+        });
+
+        selectAllBut.setText("Select All");
+        selectAllBut.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                selectAllButActionPerformed(evt);
+            }
+        });
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-            .add(jTabbedPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 524, Short.MAX_VALUE)
+            .add(jTabbedPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 532, Short.MAX_VALUE)
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(cancelBut)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 328, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 63, Short.MAX_VALUE)
+                .add(clearAllBut)
+                .add(18, 18, 18)
+                .add(selectAllBut)
+                .add(56, 56, 56)
                 .add(okBut)
                 .addContainerGap())
         );
@@ -187,7 +209,9 @@ public class FindSegmentsDialog3 extends javax.swing.JDialog {
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(cancelBut)
-                    .add(okBut))
+                    .add(okBut)
+                    .add(clearAllBut)
+                    .add(selectAllBut))
                 .addContainerGap(20, Short.MAX_VALUE))
         );
 
@@ -199,12 +223,12 @@ private void freqCutoffFieldActionPerformed(java.awt.event.ActionEvent evt) {//G
 }//GEN-LAST:event_freqCutoffFieldActionPerformed
 
 private void okButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButActionPerformed
-    ArrayList<Boolean> selectedCols = ((FilterTableModel) vcfTable.getModel()).getSelected();
-    selectedInfo = new ArrayList<String> ();
-        ArrayList<HashMap<String, String>> infos = meta.getInfo();
-        HashMap<String, String> info;
-        String id;
-    for (int i=0; i < meta.info.size(); i++ ) {
+    selectedCols = ((FilterTableModel) vcfTable.getModel()).getSelected();
+    selectedInfo = new ArrayList<String>();
+    ArrayList<HashMap<String, String>> infos = meta.getInfo();
+    HashMap<String, String> info;
+    String id;
+    for (int i = 0; i < meta.info.size(); i++) {
         if (selectedCols.get(i)) {
             info = infos.get(i);
             id = info.get("ID");
@@ -228,12 +252,26 @@ private void openFreqButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     JFileChooser jfc = new JFileChooser();
     if (jfc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
         try {
-            freqText.setText(jfc.getSelectedFile().getAbsolutePath()); 
+            freqText.setText(jfc.getSelectedFile().getAbsolutePath());
         } finally {
             this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
     }
 }//GEN-LAST:event_openFreqButActionPerformed
+
+private void clearAllButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearAllButActionPerformed
+    int rowCount = ((FilterTableModel) vcfTable.getModel()).getRowCount();
+    for (int i = 0; i < rowCount; i++) {
+        ((FilterTableModel) vcfTable.getModel()).clearAll(i);
+    }
+}//GEN-LAST:event_clearAllButActionPerformed
+
+private void selectAllButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllButActionPerformed
+    int rowCount = ((FilterTableModel) vcfTable.getModel()).getRowCount();
+    for (int i = 0; i < rowCount; i++) {
+        ((FilterTableModel) vcfTable.getModel()).selectAll(i);
+    }
+}//GEN-LAST:event_selectAllButActionPerformed
 
     /**
      * @param args the command line arguments
@@ -280,6 +318,7 @@ private void openFreqButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cancelBut;
+    private javax.swing.JToggleButton clearAllBut;
     private javax.swing.JPanel filteringPanel;
     private javax.swing.JTextField freqCutoffField;
     private javax.swing.JRadioButton freqFilterBut;
@@ -293,11 +332,27 @@ private void openFreqButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     private javax.swing.JButton okBut;
     private javax.swing.JButton openFreqBut;
     private javax.swing.JScrollPane resultsPanel;
+    private javax.swing.JToggleButton selectAllBut;
     private javax.swing.JTable vcfTable;
     // End of variables declaration//GEN-END:variables
-    
-    ArrayList<String> getSelectedInfo() {
+
+    public ArrayList<String> getSelectedInfo() {
         return selectedInfo;
+    }
+
+    public ArrayList<Boolean> getSelectedCols() {
+        return selectedCols;
+    }
+
+    private void setOldSelectedCols(ArrayList<Boolean> oldSelectecCols) {
+        if (oldSelectecCols.size() > 0) {
+            int rowCount = ((FilterTableModel) vcfTable.getModel()).getRowCount();
+            for (int i = 0; i < rowCount; i++) {
+                if (oldSelectecCols.get(i)) {
+                    ((FilterTableModel) vcfTable.getModel()).setSelected(i, 2);
+                }
+            }
+        }
     }
 
     public boolean success() {
@@ -315,11 +370,11 @@ private void openFreqButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-F
     private void setMinMatches(int s) {
         minMatches = s;
     }
-    
+
     public double getFreqCutoff() {
         return freqCutoff;
     }
-    
+
     private void setFreqCutoff(double d) {
         freqCutoff = d;
     }
