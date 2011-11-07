@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import javax.swing.JOptionPane;
 
 public class DataDirectory {
 
@@ -18,8 +19,7 @@ public class DataDirectory {
         try {
             directory = new File(dir);
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Unable to Open the Selected Directory.", "Error", JOptionPane.ERROR_MESSAGE);                        
         }
 
         //what chromosomes do we have here?
@@ -64,30 +64,20 @@ public class DataDirectory {
         vcf = new VCF(directory.getAbsolutePath() + File.separator + vcfName);
         printLog("Found and parsed vcf file: " + vcfName);
 
+        // pass to the pedfile object the list of inds in the vcf so the VCF column can be added to the pedigree
+        
         String pedName = fileName + ".ped";
         PedFile pedFile = new PedFile(directory.getAbsolutePath() + File.separator + pedName);
-        ped = pedFile.makeCSV();
+        ped = pedFile.makeCSV(vcf.getMeta().getSampleHash());
         printLog("Found and parsed ped file: " + pedName);
         
+        // create a position hash of all the samples in the vcf
         ArrayList<String> vcfSamples = vcf.getMeta().getSamples();
         HashMap<String, Integer> vcfSampleHash = new HashMap<String, Integer> ();
         int counter = 0;
         for (String s: vcfSamples) {
             counter++;
             vcfSampleHash.put(s, counter);
-        }
-        
-        ArrayList<String> pedSamples = pedFile.getSamples();
-        ArrayList<String> sequencedInds = new ArrayList<String> ();
-        for (String s: pedSamples) {
-            if (vcfSampleHash.containsKey(s)) {
-                sequencedInds.add(s);
-            }
-        }
-        
-        if (sequencedInds.size() == 0) {
-            //no matching sample ids between the vcf and ped file
-            printLog("Error: No sequenced sample in the family");
         }
     }
 
