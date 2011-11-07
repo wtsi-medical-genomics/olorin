@@ -10,8 +10,10 @@ public class VCFMeta {
     ArrayList<HashMap<String, String>> format;
     HashMap<String, String> other;
     ArrayList<String> samples;
+    HashMap<String, Integer> sampleHash;
+    
     ArrayList<String> infoIds;
-
+    
     // replace the arraylists with info, filter and format objects?
     public VCFMeta() {
         info = new ArrayList<HashMap<String, String>>();
@@ -20,6 +22,8 @@ public class VCFMeta {
         format = new ArrayList<HashMap<String, String>>();
         other = new HashMap<String, String>();
         infoIds = new ArrayList<String>();
+        samples = new ArrayList<String>();
+        sampleHash = new HashMap<String, Integer>();
     }
 
     public void add(String s) {
@@ -78,14 +82,10 @@ public class VCFMeta {
             }
         } else if (s.startsWith("#")) {
             s = s.substring(1);
-            // if there are format fields then there are genotypes in the file
-            // so parse the sample ids
-            if (format.size() > 0) {
-                samples = new ArrayList<String>();
-                String[] values = s.trim().split("\t");
-                for (int i = 9; i < values.length; i++) {
-                    samples.add(values[i]);
-                }
+            String[] values = s.trim().split("\t");
+            for (int i = 9; i < values.length; i++) {
+                samples.add(values[i]);
+                sampleHash.put(values[i], i - 9);
             }
         }
     }
@@ -117,6 +117,10 @@ public class VCFMeta {
     public ArrayList<String> getInfoIds() {
         return infoIds;
     }
+    
+    public HashMap<String, Integer> getSampleHash() {
+        return sampleHash;
+    }
 
     public static class Info {
 
@@ -127,7 +131,7 @@ public class VCFMeta {
 
         public Info() {
         }
-        
+
         public String getDescription() {
             return description;
         }
