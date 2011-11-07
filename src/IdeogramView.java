@@ -136,13 +136,13 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
     private int minMatches;
     
 
-    public IdeogramView() {
+    public IdeogramView(double r) {
         // dragmode
         selectionBackground = new Color(0xdd, 0xdd, 0xff);
         viewHistory = new LinkedList<Interval>();
 
         scaleX = 1.0;
-        scaleY = 1.0;
+        scaleY = r;
         chromosome = 1;
         showMarkers = true;
 
@@ -164,11 +164,6 @@ public class IdeogramView extends JPanel implements Serializable, ActionListener
 
         setBackground(Color.WHITE);
         initTransientState();
-    }
-
-    public IdeogramView(IdeogramDB db) {
-        this();
-        this.db = db;
     }
 
     public void setSegments (MarkerCollection mc, int mm) {
