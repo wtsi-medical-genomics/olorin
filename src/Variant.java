@@ -21,6 +21,9 @@ public class Variant {
     public ArrayList tableArray;
     public ArrayList<String> selectedCols;
     public ArrayList<Integer> selectedInds;
+    public ArrayList<VariantEffect> variantEffects;
+    public String gerpScore;
+    public Boolean csqSelected = false;
 
     public Variant() {
     }
@@ -62,12 +65,25 @@ public class Variant {
         this.setQual(values[5]);
         this.setFilter(values[6]);
 
+        variantEffects = new ArrayList<VariantEffect>();
         info = new HashMap<String, String>();
         String infoVals[] = values[7].split(";");
         for (int i = 0; i < infoVals.length; i++) {
             if (infoVals[i].contains("=")) {
                 String[] keyValuePairs = infoVals[i].split("=");
-                info.put(keyValuePairs[0], keyValuePairs[1]);
+                if (keyValuePairs[0].matches("CSQ")) {
+                    info.put(keyValuePairs[0], keyValuePairs[1]);
+                    String[] csqVals = keyValuePairs[1].split("\\+");
+                    for (int j = 0; j < csqVals.length; j++) {
+                        if (csqVals[j].startsWith("GERP")) {
+                            setGerpScore(csqVals[j].split(",")[1]);
+                        } else {
+                            variantEffects.add(new VariantEffect(csqVals[j]));
+                        }
+                    }
+                } else {
+                    info.put(keyValuePairs[0], keyValuePairs[1]);
+                }
             } else {
                 info.put(infoVals[i], "TRUE");
             }
@@ -79,6 +95,18 @@ public class Variant {
             genotypes.add(parseGenotypes(values[i]));
             genotypeStrings.add(parseGenotypeString(values[i]));
         }
+    }
+
+    public String getGerpScore() {
+        if (gerpScore != null) {
+            return gerpScore;
+        } else {
+            return ".";
+        }
+    }
+
+    public void setGerpScore(String gerpScore) {
+        this.gerpScore = gerpScore;
     }
 
     private int parseGenotypes(String s) {
@@ -132,7 +160,6 @@ public class Variant {
         }
     }
 
-    // given an array of user selected columns makes an array containing just the selected data
     public void setTableArray(ArrayList<String> selectedCols, ArrayList<Integer> selectedInds) {
         tableArray = new ArrayList();
         tableArray.add(getChr());
@@ -142,6 +169,7 @@ public class Variant {
         tableArray.add(StringUtils.join(getAlt(), ", "));
         tableArray.add(getQual());
         tableArray.add(getFilter());
+
         if (freqFiltered) {
             tableArray.add(getFreq());
         }
@@ -151,12 +179,30 @@ public class Variant {
         }
 
         for (String s : selectedCols) {
+            if (s.matches("CSQ")) {
+                setCsqSelected(true);
+            }
             String value = getInfo().get(s);
             if (value != null) {
                 tableArray.add(value);
             } else {
                 tableArray.add(".");
             }
+        }
+
+        if (csqSelected) {
+            VariantEffect ve = getMostDamagingEffect();
+            tableArray.add(ve.getGene());
+            tableArray.add(ve.getConsequence());
+            tableArray.add(ve.getAaChange());
+            tableArray.add(ve.getCondel());
+            tableArray.add(ve.getCondelScore());
+            tableArray.add(ve.getSift());
+            tableArray.add(ve.getSiftScore());
+            tableArray.add(ve.getPolyphen());
+            tableArray.add(ve.getPolyphenScore());
+            tableArray.add(ve.getGranthamScore());
+            tableArray.add(this.getGerpScore());
         }
     }
 
@@ -244,5 +290,19 @@ public class Variant {
 
     public Double getFreq() {
         return freq;
+    }
+
+    private VariantEffect getMostDamagingEffect() {
+        if (variantEffects.size() > 0) {
+            //return the effect with the highest condel score
+            return variantEffects.get(0);
+        } else {
+            // if there are no variant effect then create an empty object
+            return new VariantEffect();
+        }
+    }
+
+    private void setCsqSelected(boolean b) {
+        csqSelected = b;
     }
 }
