@@ -102,7 +102,9 @@ public class Olorin extends JFrame implements ActionListener {
         new Olorin();
 
     }
-    private JPopupMenu popmenu;
+    private boolean freqFilter;
+    private double freqCutoff;
+    private String freqFile;
 
     Olorin() {
         super("Olorin");
@@ -343,63 +345,53 @@ public class Olorin extends JFrame implements ActionListener {
                     fsd.setVisible(true);
 
                     if (fsd.success()) {
-                        selectedCols = fsd.getSelectedCols();
-                        minMatches = fsd.getMinMatches();
                         String filteringMode = getFilteringMode();
                         indIds = getIndIds(filteringMode);
+                        setFreqFilter(fsd.freqFilter());
+                        setFreqCutoff(fsd.getFreqCutoff());
+                        setSelectedCols(fsd.getSelectedCols());
+                        setMinMatches(fsd.getMinMatches());
+
 
                         SampleCompare sc = new SampleCompare();
                         segments = sc.compareMulti(selectedInds);
                         if (segments.size() > 0) {
-                            if (fsd.freqFilter()) {
-//                                File ff = new File(fsd.getFreqFile());
-//                                if (ff.exists()) {
-//                                    try {
-//                                        vcfData = data.vcf.getVariants(segments, minMatches, fsd.getFreqFile(), fsd.getFreqCutoff());
-//                                    } catch (Exception ex) {
-//                                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
-//                                    }
-//
-//                                    if (vcfData != null) {
-//                                        variantsTable = new JTable(new vcfTableModel(vcfData, fsd.getSelectedInfo(), fsd.getFreqFile()));
-//                                        variantsTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-//                                        TableColumnAdjuster tca = new TableColumnAdjuster(variantsTable);
-//                                        tca.setColumnDataIncluded(true);
-//                                        tca.adjustColumns();
-//                                        variantsTable.setFillsViewportHeight(true);
-//                                        variantsTable.setAutoCreateRowSorter(true);
-//                                        variantsPane.setViewportView(variantsTable);
-//                                        contentPanel.revalidate();
-//                                        contentPanel.repaint();
-//                                        exportVariants.setEnabled(true);
-//                                        exportSegments.setEnabled(true);
-//                                    }
-//                                } else {
-//                                    JOptionPane.showMessageDialog(null, "Frequency File Missing.", "Error", JOptionPane.ERROR_MESSAGE);
-//                                }
+
+                            if (getFreqFilter()) {
+                                File ff = new File(fsd.getFreqFile());
+                                if (ff.exists()) {
+                                    setFreqFile(fsd.getFreqFile());
+                                    try {
+                                        vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), filteringMode, indIds, getFreqFile(), getFreqCutoff());
+                                    } catch (IOException ex) {
+                                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
+                                    }
+                                } else {
+                                    JOptionPane.showMessageDialog(null, "Frequency File Missing.", "Error", JOptionPane.ERROR_MESSAGE);
+                                }
                             } else {
                                 try {
                                     vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), filteringMode, indIds);
                                 } catch (IOException ex) {
                                     Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
                                 }
+                            }
 
-                                if (vcfData != null) {
-                                    EventList<Variant> variants = GlazedLists.threadSafeList(new BasicEventList<Variant>());
-                                    variants.addAll(vcfData);
-                                    EventList matcherEditors = createFilters(getinfoOffset());
-                                    FilterList filteredVariants = new FilterList(variants, new CompositeMatcherEditor(matcherEditors));
-                                    SortedList sortedFilteredVariants = new SortedList(filteredVariants, null);
-                                    JTable t = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo(), indIds)));
-                                    t.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-                                    new TableComparatorChooser(t, sortedFilteredVariants, true);
+                            if (vcfData != null) {
+                                EventList<Variant> variants = GlazedLists.threadSafeList(new BasicEventList<Variant>());
+                                variants.addAll(vcfData);
+                                EventList matcherEditors = createFilters(getinfoOffset());
+                                FilterList filteredVariants = new FilterList(variants, new CompositeMatcherEditor(matcherEditors));
+                                SortedList sortedFilteredVariants = new SortedList(filteredVariants, null);
+                                JTable t = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo(), getFreqFilter(), indIds)));
+                                t.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+                                new TableComparatorChooser(t, sortedFilteredVariants, true);
 
-                                    variantsPane.setViewportView(t);
-                                    contentPanel.revalidate();
-                                    contentPanel.repaint();
-                                    exportVariants.setEnabled(true);
-                                    exportSegments.setEnabled(true);
-                                }
+                                variantsPane.setViewportView(t);
+                                contentPanel.revalidate();
+                                contentPanel.repaint();
+                                exportVariants.setEnabled(true);
+                                exportSegments.setEnabled(true);
                             }
                             try {
                                 try {
@@ -453,10 +445,19 @@ public class Olorin extends JFrame implements ActionListener {
             }
         } else if (command.equals("anyMode")) {
             if (segments != null) {
-                try {
-                    vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "any", indIds);
-                } catch (IOException ex) {
-                    Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
+
+                if (getFreqFilter()) {
+                    try {
+                        vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "any", indIds, getFreqFile(), getFreqCutoff());
+                    } catch (IOException ex) {
+                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else {
+                    try {
+                        vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "any", indIds);
+                    } catch (IOException ex) {
+                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
 
                 if (vcfData != null) {
@@ -465,23 +466,29 @@ public class Olorin extends JFrame implements ActionListener {
                     EventList matcherEditors = createFilters(getinfoOffset());
                     FilterList filteredVariants = new FilterList(variants, new CompositeMatcherEditor(matcherEditors));
                     SortedList sortedFilteredVariants = new SortedList(filteredVariants, null);
-                    JTable t = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo(), indIds)));
+                    JTable t = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo(), getFreqFilter(), indIds)));
                     t.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
                     new TableComparatorChooser(t, sortedFilteredVariants, true);
 
                     variantsPane.setViewportView(t);
                     contentPanel.revalidate();
                     contentPanel.repaint();
-                    exportVariants.setEnabled(true);
-                    exportSegments.setEnabled(true);
                 }
             }
         } else if (command.equals("selectedMode")) {
             if (segments != null) {
-                try {
-                    vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "selected", indIds);
-                } catch (IOException ex) {
-                    Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
+                if (getFreqFilter()) {
+                    try {
+                        vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "selected", indIds, getFreqFile(), getFreqCutoff());
+                    } catch (IOException ex) {
+                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else {
+                    try {
+                        vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "selected", indIds);
+                    } catch (IOException ex) {
+                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
 
                 if (vcfData != null) {
@@ -490,23 +497,29 @@ public class Olorin extends JFrame implements ActionListener {
                     EventList matcherEditors = createFilters(getinfoOffset());
                     FilterList filteredVariants = new FilterList(variants, new CompositeMatcherEditor(matcherEditors));
                     SortedList sortedFilteredVariants = new SortedList(filteredVariants, null);
-                    JTable t = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo(), indIds)));
+                    JTable t = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo(), getFreqFilter(), indIds)));
                     t.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
                     new TableComparatorChooser(t, sortedFilteredVariants, true);
 
                     variantsPane.setViewportView(t);
                     contentPanel.revalidate();
                     contentPanel.repaint();
-                    exportVariants.setEnabled(true);
-                    exportSegments.setEnabled(true);
                 }
             }
         } else if (command.equals("allMode")) {
             if (segments != null) {
-                try {
-                    vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "all", indIds);
-                } catch (IOException ex) {
-                    Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
+                if (getFreqFilter()) {
+                    try {
+                        vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "all", indIds, getFreqFile(), getFreqCutoff());
+                    } catch (IOException ex) {
+                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else {
+                    try {
+                        vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "all", indIds);
+                    } catch (IOException ex) {
+                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
 
                 if (vcfData != null) {
@@ -515,7 +528,7 @@ public class Olorin extends JFrame implements ActionListener {
                     EventList matcherEditors = createFilters(getinfoOffset());
                     FilterList filteredVariants = new FilterList(variants, new CompositeMatcherEditor(matcherEditors));
                     SortedList sortedFilteredVariants = new SortedList(filteredVariants, null);
-                    JTable t = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo(), indIds)));
+                    JTable t = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo(), getFreqFilter(), indIds)));
                     t.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
                     new TableComparatorChooser(t, sortedFilteredVariants, true);
 
@@ -531,6 +544,7 @@ public class Olorin extends JFrame implements ActionListener {
 
     private int getinfoOffset() {
         // create an int for the table offset to get to the info data
+        // taking into account the default columns, inds and filter columns
         int infoColOffset = 7 + indIds.size();
         if (fsd.freqFilter()) {
             infoColOffset++;
@@ -592,26 +606,21 @@ public class Olorin extends JFrame implements ActionListener {
         c.gridy = 0;
         c.anchor = GridBagConstraints.WEST;
 
-        // default filters
         NumericMatcherEditor qme = new NumericMatcherEditor("Quality", 5, 0d, 10000d);
         matcherEditors.add(qme);
         infoFilterPanel.add(qme.getWidget(), c);
-//                                    c.gridy = 1;
-//                                    StringMatcherEditor fme = new StringMatcherEditor("Filter", 6);
-//                                    matcherEditors.add(fme.getTextComponentMatcherEditor());
-//                                    infoFilterPanel.add(fme.getWidget(), c);
 
-        // for each of the user selected info fields create a filter
+        // filter for filter column?
+
+        boolean csqSelected = false;
         for (int i = 0; i < fsd.getSelectedInfo().size(); i++) {
             c.gridy = i + 1;
             String id = fsd.getSelectedInfo().get(i);
             String type = data.vcf.getMeta().getInfoObjects().get(id).getType();
             String number = data.vcf.getMeta().getInfoObjects().get(id).getNumber();
 
-
-
             if (id.matches("CSQ")) {
-                // create filters for the consequence field
+                csqSelected = true;
             } else {
                 if (type.matches("String")) {
                     StringMatcherEditor sme = new StringMatcherEditor(id, i + infoColOffset);
@@ -632,6 +641,7 @@ public class Olorin extends JFrame implements ActionListener {
                     matcherEditors.add(nme);
                     infoFilterPanel.add(nme.getWidget(), c);
                 } else if (type.matches("Float") && number.matches("1")) {
+
                     ArrayList<Double> values = getValues(i + infoColOffset);
                     Double min;
                     Double max;
@@ -652,6 +662,78 @@ public class Olorin extends JFrame implements ActionListener {
                 }
             }
         }
+
+        if (csqSelected) {
+            // create filters for the consequence field
+            int csqOffset = infoColOffset + (fsd.getSelectedInfo().size());
+
+            NumericMatcherEditor nme;
+            StringMatcherEditor sme;
+
+            c.gridy++;
+            sme = new StringMatcherEditor("CSQ-Gene", csqOffset + 0);
+            matcherEditors.add(sme.getTextComponentMatcherEditor());
+            infoFilterPanel.add(sme.getWidget(), c);
+            c.gridy++;
+            sme = new StringMatcherEditor("CSQ-Consequence", csqOffset + 1);
+            matcherEditors.add(sme.getTextComponentMatcherEditor());
+            infoFilterPanel.add(sme.getWidget(), c);
+            c.gridy++;
+            sme = new StringMatcherEditor("CSQ-Condel prediction", csqOffset + 3);
+            matcherEditors.add(sme.getTextComponentMatcherEditor());
+            infoFilterPanel.add(sme.getWidget(), c);
+            c.gridy++;
+            nme = new NumericMatcherEditor("CSQ-Condel Score", csqOffset + 4);
+            matcherEditors.add(nme);
+            infoFilterPanel.add(nme.getWidget(), c);
+            c.gridy++;
+            sme = new StringMatcherEditor("CSQ-SIFT prediction", csqOffset + 5);
+            matcherEditors.add(sme.getTextComponentMatcherEditor());
+            infoFilterPanel.add(sme.getWidget(), c);
+            c.gridy++;
+            nme = new NumericMatcherEditor("CSQ-SIFT score", csqOffset + 6);
+            matcherEditors.add(nme);
+            infoFilterPanel.add(nme.getWidget(), c);
+            c.gridy++;
+            sme = new StringMatcherEditor("CSQ-PolyPhen prediction", csqOffset + 7);
+            matcherEditors.add(sme.getTextComponentMatcherEditor());
+            infoFilterPanel.add(sme.getWidget(), c);
+            c.gridy++;
+            nme = new NumericMatcherEditor("CSQ-PolyPhen score", csqOffset + 8);
+            matcherEditors.add(nme);
+            infoFilterPanel.add(nme.getWidget(), c);
+            c.gridy++;
+
+            ArrayList<Double> granthamValues = getValues(csqOffset + 9);
+            Double granthamMin;
+            Double granthamMax;
+            try {
+                granthamMin = Collections.min(granthamValues);
+                granthamMax = Collections.max(granthamValues);
+            } catch (NoSuchElementException nsee) {
+                granthamMin = 0d;
+                granthamMax = 0d;
+            }
+            nme = new NumericMatcherEditor("CSQ-Grantham score", csqOffset + 9, granthamMin, granthamMax);
+            matcherEditors.add(nme);
+            infoFilterPanel.add(nme.getWidget(), c);
+            c.gridy++;
+
+            ArrayList<Double> gerpValues = getValues(csqOffset + 10);
+            Double gerpMin;
+            Double gerpMax;
+            try {
+                gerpMin = Collections.min(gerpValues);
+                gerpMax = Collections.max(gerpValues);
+            } catch (NoSuchElementException nsee) {
+                gerpMin = 0d;
+                gerpMax = 0d;
+            }
+            nme = new NumericMatcherEditor("CSQ-Gerp score", csqOffset + 10, gerpMin, gerpMax);
+            matcherEditors.add(nme);
+            infoFilterPanel.add(nme.getWidget(), c);
+        }
+
 
         filterPanel.removeAll();
         c.gridx = 0;
@@ -707,9 +789,7 @@ public class Olorin extends JFrame implements ActionListener {
         c.gridheight = 1;
         c.gridwidth = 1;
         c.fill = GridBagConstraints.NONE;
-        int n2 = chrNum / 2;
 
-// chromosomes in a single row
         int h = ideogramPane.getHeight();
         int w = ideogramPane.getWidth();
 
@@ -732,28 +812,6 @@ public class Olorin extends JFrame implements ActionListener {
 
             chr_panel.add(iv, c);
         }
-
-// chromosomes in two rows        
-//        for (int i = 0; i < chrNum; ++i) {
-//            IdeogramView iv = new IdeogramView();
-//            iv.setChromosome(i + 1);
-//            iv.setIdeogramDB(db);
-//            
-//            // when creating the ideogram change the width of the chromosome and sharing blocks acording to the size of the window
-//            
-//            if (i >= n2) {
-//                iv.setPreferredSize(new Dimension(Math.round(ideogramPane.getWidth()/n2), 180));
-//            } else {
-//                iv.setPreferredSize(new Dimension(Math.round(ideogramPane.getWidth()/n2), 300));
-//            }
-//            if (segHash.containsKey(Integer.toString(i+1))) {
-//                iv.setSegments(segHash.get(Integer.toString(i+1)));
-//            }            
-//            c.gridx = i % n2;
-//            c.gridy = i / n2;
-//            
-//            chr_panel.add(iv, c);
-//        }
 
         ideogramPane.setViewportView(chr_panel);
         contentPanel.revalidate();
@@ -855,28 +913,44 @@ public class Olorin extends JFrame implements ActionListener {
         return values;
     }
 
-    private ArrayList<Integer> getIntValues(int i) {
-        ArrayList<Integer> values = new ArrayList<Integer>();
-        for (Variant v : vcfData) {
-            String s = (String) v.getTableArray().get(i);
-            //handle cases where it is not an int such as .
-            if (!s.matches(".")) {
-                values.add(Integer.parseInt(s));
-            }
-        }
-        return values;
+    private void setFreqFilter(boolean freqFilter) {
+        this.freqFilter = freqFilter;
+    }
+    
+    private Boolean getFreqFilter() {
+        return this.freqFilter;
     }
 
-    private ArrayList<Float> getFloatValues(int i) {
-        ArrayList<Float> values = new ArrayList<Float>();
-        for (Variant v : vcfData) {
-            String s = (String) v.getTableArray().get(i);
-            //handle cases where it is not an int such as .
-            if (!s.matches(".")) {
-                values.add(Float.parseFloat(s));
-            }
-        }
-        return values;
+    private void setFreqCutoff(double freqCutoff) {
+        this.freqCutoff = freqCutoff;
+    }
+    
+    private double getFreqCutoff() {
+        return this.freqCutoff;
+    }
+
+    private void setSelectedCols(ArrayList<Boolean> selectedCols) {
+        this.selectedCols = selectedCols;
+    }
+    
+    private ArrayList<Boolean> getSelectedCols() {
+        return this.selectedCols;
+    }
+
+    private void setMinMatches(int minMatches) {
+        this.minMatches = minMatches;
+    }
+    
+    private int getMinMatches() {
+        return this.minMatches;
+    }
+
+    private void setFreqFile(String freqFile) {
+        this.freqFile = freqFile;
+    }
+    
+    private String getFreqFile() {
+        return this.freqFile;
     }
 
     class StringMatcherEditor {
@@ -918,6 +992,23 @@ public class Olorin extends JFrame implements ActionListener {
         private int i;
         private JPanel widget;
         private ArrayList<String> selectedCols;
+
+        private NumericMatcherEditor(String id, int i) {
+            this.id = id;
+            this.i = i;
+            this.widget = new JPanel();
+
+            widget.add(new JLabel(id + ":"));
+
+            this.signChooser = new JComboBox(new Object[]{">", "<"});
+            this.signChooser.addActionListener(this);
+            widget.add(signChooser);
+
+            this.valueField = new JTextField(5);
+            valueField.setText("0");
+            this.valueField.addActionListener(this);
+            widget.add(valueField);
+        }
 
         private NumericMatcherEditor(String id, int i, Double min, Double max) {
             this.id = id;
@@ -1067,10 +1158,10 @@ public class Olorin extends JFrame implements ActionListener {
     public static class VariantTableFormat implements TableFormat {
 
         private ArrayList<String> usrSelectedCols;
-        private ArrayList<String> cols;
         private ArrayList<String> indIds;
+        public ArrayList<String> cols;
 
-        VariantTableFormat(ArrayList<String> selectedCols, ArrayList<String> indIds) {
+        VariantTableFormat(ArrayList<String> selectedCols, Boolean freqFilter, ArrayList<String> indIds) {
             usrSelectedCols = selectedCols;
             cols = new ArrayList();
             cols.add("Chromosome");
@@ -1080,8 +1171,32 @@ public class Olorin extends JFrame implements ActionListener {
             cols.add("Alt");
             cols.add("Quality");
             cols.add("Filter");
+            if (freqFilter) {
+                // change this to be the freq file name?
+                cols.add("Frequency");
+            }
             cols.addAll(indIds);
-            cols.addAll(usrSelectedCols);
+            Boolean csqSelected = false;
+            for (String s : usrSelectedCols) {
+                if (s.matches("CSQ")) {
+                    csqSelected = true;
+                }
+                cols.add(s);
+            }
+
+            if (csqSelected) {
+                cols.add("CSQ-Gene");
+                cols.add("CSQ-Consequence");
+                cols.add("CSQ-Amino acid change");
+                cols.add("CSQ-Condel prediction");
+                cols.add("CSQ-Condel score");
+                cols.add("CSQ-SIFT prediction");
+                cols.add("CSQ-SIFT score");
+                cols.add("CSQ-PloyPhen prediction");
+                cols.add("CSQ-PolyPhen score");
+                cols.add("CSQ-Grantham score");
+                cols.add("CSQ-GERP score");
+            }
         }
 
         @Override
