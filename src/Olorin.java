@@ -4,14 +4,11 @@ import ca.odell.glazedlists.EventList;
 import ca.odell.glazedlists.FilterList;
 import ca.odell.glazedlists.GlazedLists;
 import ca.odell.glazedlists.SortedList;
-import ca.odell.glazedlists.TextFilterator;
-import ca.odell.glazedlists.gui.TableFormat;
-import ca.odell.glazedlists.matchers.AbstractMatcherEditor;
+import ca.odell.glazedlists.event.ListEvent;
+import ca.odell.glazedlists.event.ListEventListener;
 import ca.odell.glazedlists.matchers.CompositeMatcherEditor;
-import ca.odell.glazedlists.matchers.Matcher;
 import ca.odell.glazedlists.swing.EventTableModel;
 import ca.odell.glazedlists.swing.TableComparatorChooser;
-import ca.odell.glazedlists.swing.TextComponentMatcherEditor;
 import ideogram.Marker;
 import ideogram.MarkerCollection;
 import ideogram.db.IdeogramDB;
@@ -21,7 +18,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
-import javax.swing.event.ChangeEvent;
 import pedviz.algorithms.Sugiyama;
 import pedviz.graph.Graph;
 import pedviz.graph.Node;
@@ -59,10 +55,9 @@ import java.util.NoSuchElementException;
 import java.util.Vector;
 import java.util.zip.GZIPInputStream;
 import javax.imageio.ImageIO;
-import javax.swing.event.ChangeListener;
 import util.FileFormatException;
 
-public class Olorin extends JFrame implements ActionListener {
+public class Olorin extends JFrame implements ActionListener, ListEventListener, MouseListener {
 
     FindSegmentsDialog fsd;
     JFileChooser jfc;
@@ -105,6 +100,12 @@ public class Olorin extends JFrame implements ActionListener {
     private boolean freqFilter;
     private double freqCutoff;
     private String freqFile;
+    EventList<Variant> variants;
+    private JLabel variantCount;
+    private int currentVariantCount;
+    private int totalVariantCount;
+    private JTable table;
+    private SortedList sortedFilteredVariants;
 
     Olorin() {
         super("Olorin");
@@ -159,7 +160,9 @@ public class Olorin extends JFrame implements ActionListener {
         filterPanel = new JPanel(new GridBagLayout());
 
         modePanel = new JPanel(new GridBagLayout());
-
+        currentVariantCount = 0;
+        totalVariantCount = 0;
+        variantCount = new JLabel("Currently showing " + currentVariantCount + " of " + totalVariantCount + " variants");
         anyMode = new JRadioButton("any individual");
         anyMode.setActionCommand("anyMode");
         anyMode.setSelected(true);
@@ -176,21 +179,21 @@ public class Olorin extends JFrame implements ActionListener {
         group.add(selectedMode);
         group.add(allMode);
 
-
         GridBagConstraints c = new GridBagConstraints();
+        c.anchor = GridBagConstraints.WEST;
         c.gridx = 0;
         c.gridy = 0;
-        c.anchor = GridBagConstraints.WEST;
-
-        modePanel.add(new JLabel("Show variants present in ..."), c);
+        modePanel.add(variantCount);
         c.gridx = 0;
         c.gridy = 1;
+        modePanel.add(new JLabel("Show variants present in ..."), c);
+        c.gridx = 0;
+        c.gridy = 2;
         modePanel.add(anyMode, c);
         c.gridx = 1;
         modePanel.add(selectedMode, c);
         c.gridx = 2;
         modePanel.add(allMode, c);
-
         c.gridx = 0;
         c.gridy = 0;
         filterPanel.add(modePanel, c);
@@ -208,13 +211,7 @@ public class Olorin extends JFrame implements ActionListener {
             @Override
             public void componentResized(ComponentEvent e) {
                 if (segments != null) {
-                    try {
-                        drawIdeogram(segments);
-                    } catch (IOException ex) {
-                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (FileFormatException ex) {
-                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                    drawIdeogram(segments);
                 }
             }
         });
@@ -357,62 +354,34 @@ public class Olorin extends JFrame implements ActionListener {
                         segments = sc.compareMulti(selectedInds);
                         if (segments.size() > 0) {
 
-                            if (getFreqFilter()) {
-                                File ff = new File(fsd.getFreqFile());
-                                if (ff.exists()) {
-                                    setFreqFile(fsd.getFreqFile());
-                                    try {
+                            try {
+                                if (getFreqFilter()) {
+                                    File ff = new File(fsd.getFreqFile());
+                                    if (ff.exists()) {
+                                        setFreqFile(fsd.getFreqFile());
                                         vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), filteringMode, indIds, getFreqFile(), getFreqCutoff());
-                                    } catch (IOException ex) {
-                                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
+                                    } else {
+                                        JOptionPane.showMessageDialog(null, "Frequency File Missing.", "Error", JOptionPane.ERROR_MESSAGE);
                                     }
                                 } else {
-                                    JOptionPane.showMessageDialog(null, "Frequency File Missing.", "Error", JOptionPane.ERROR_MESSAGE);
-                                }
-                            } else {
-                                try {
                                     vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), filteringMode, indIds);
-                                } catch (IOException ex) {
-                                    Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
                                 }
+                            } catch (IOException ex) {
+                                JOptionPane.showMessageDialog(null, "Error finding variants.", "Error", JOptionPane.ERROR_MESSAGE);
                             }
 
                             if (vcfData != null) {
-                                EventList<Variant> variants = GlazedLists.threadSafeList(new BasicEventList<Variant>());
-                                variants.addAll(vcfData);
-                                EventList matcherEditors = createFilters(getinfoOffset());
-                                FilterList filteredVariants = new FilterList(variants, new CompositeMatcherEditor(matcherEditors));
-                                SortedList sortedFilteredVariants = new SortedList(filteredVariants, null);
-                                JTable t = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo(), getFreqFilter(), indIds)));
-                                t.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-                                new TableComparatorChooser(t, sortedFilteredVariants, true);
-
-                                variantsPane.setViewportView(t);
-                                contentPanel.revalidate();
-                                contentPanel.repaint();
-                                exportVariants.setEnabled(true);
-                                exportSegments.setEnabled(true);
+                                showVariants();
                             }
-                            try {
-                                try {
-                                    drawIdeogram(segments);
-                                } catch (FileFormatException ex) {
-                                    Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
-                                }
-                            } catch (IOException ex) {
-                                Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
-                            }
+                            drawIdeogram(segments);
                             savePlot.setEnabled(true);
                         } else {
-                            // no segments found
-                            // if a table has already been created then remove it
+                            JOptionPane.showMessageDialog(null, "No Shared Segements Found.", "Error", JOptionPane.ERROR_MESSAGE);
                             variantsPane.removeAll();
-                            //remove any created plots
                             exportVariants.setEnabled(false);
                             exportSegments.setEnabled(false);
                             savePlot.setEnabled(false);
                             //remove the segments drawn on the idoegrams
-                            // do that here!
                         }
                     }
                 } else {
@@ -420,7 +389,7 @@ public class Olorin extends JFrame implements ActionListener {
                 }
 
             } else {
-                JOptionPane.showMessageDialog(null, "No Individuals Selected.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Too few Individuals Selected.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } else if (command.equals("Save Plot")) {
             File defaultFileName = new File("olorin.png");
@@ -445,98 +414,47 @@ public class Olorin extends JFrame implements ActionListener {
             }
         } else if (command.equals("anyMode")) {
             if (segments != null) {
-
-                if (getFreqFilter()) {
-                    try {
+                try {
+                    if (getFreqFilter()) {
                         vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "any", indIds, getFreqFile(), getFreqCutoff());
-                    } catch (IOException ex) {
-                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                } else {
-                    try {
+                    } else {
                         vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "any", indIds);
-                    } catch (IOException ex) {
-                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
                     }
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(null, "Error finding variants.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-
                 if (vcfData != null) {
-                    EventList<Variant> variants = GlazedLists.threadSafeList(new BasicEventList<Variant>());
-                    variants.addAll(vcfData);
-                    EventList matcherEditors = createFilters(getinfoOffset());
-                    FilterList filteredVariants = new FilterList(variants, new CompositeMatcherEditor(matcherEditors));
-                    SortedList sortedFilteredVariants = new SortedList(filteredVariants, null);
-                    JTable t = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo(), getFreqFilter(), indIds)));
-                    t.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-                    new TableComparatorChooser(t, sortedFilteredVariants, true);
-
-                    variantsPane.setViewportView(t);
-                    contentPanel.revalidate();
-                    contentPanel.repaint();
+                    showVariants();
                 }
             }
         } else if (command.equals("selectedMode")) {
             if (segments != null) {
-                if (getFreqFilter()) {
-                    try {
+                try {
+                    if (getFreqFilter()) {
                         vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "selected", indIds, getFreqFile(), getFreqCutoff());
-                    } catch (IOException ex) {
-                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                } else {
-                    try {
+                    } else {
                         vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "selected", indIds);
-                    } catch (IOException ex) {
-                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
                     }
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(null, "Error finding variants.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-
                 if (vcfData != null) {
-                    EventList<Variant> variants = GlazedLists.threadSafeList(new BasicEventList<Variant>());
-                    variants.addAll(vcfData);
-                    EventList matcherEditors = createFilters(getinfoOffset());
-                    FilterList filteredVariants = new FilterList(variants, new CompositeMatcherEditor(matcherEditors));
-                    SortedList sortedFilteredVariants = new SortedList(filteredVariants, null);
-                    JTable t = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo(), getFreqFilter(), indIds)));
-                    t.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-                    new TableComparatorChooser(t, sortedFilteredVariants, true);
-
-                    variantsPane.setViewportView(t);
-                    contentPanel.revalidate();
-                    contentPanel.repaint();
+                    showVariants();
                 }
             }
         } else if (command.equals("allMode")) {
             if (segments != null) {
-                if (getFreqFilter()) {
-                    try {
+                try {
+                    if (getFreqFilter()) {
                         vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "all", indIds, getFreqFile(), getFreqCutoff());
-                    } catch (IOException ex) {
-                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                } else {
-                    try {
+                    } else {
                         vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedInfo(), "all", indIds);
-                    } catch (IOException ex) {
-                        Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
                     }
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(null, "Error finding variants.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-
                 if (vcfData != null) {
-                    EventList<Variant> variants = GlazedLists.threadSafeList(new BasicEventList<Variant>());
-                    variants.addAll(vcfData);
-                    EventList matcherEditors = createFilters(getinfoOffset());
-                    FilterList filteredVariants = new FilterList(variants, new CompositeMatcherEditor(matcherEditors));
-                    SortedList sortedFilteredVariants = new SortedList(filteredVariants, null);
-                    JTable t = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo(), getFreqFilter(), indIds)));
-                    t.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-                    new TableComparatorChooser(t, sortedFilteredVariants, true);
-
-                    variantsPane.setViewportView(t);
-                    contentPanel.revalidate();
-                    contentPanel.repaint();
-                    exportVariants.setEnabled(true);
-                    exportSegments.setEnabled(true);
+                    showVariants();
                 }
             }
         }
@@ -551,7 +469,7 @@ public class Olorin extends JFrame implements ActionListener {
         }
         return infoColOffset;
     }
-
+    
     private ArrayList getIndIds(String fm) {
         if (fm.matches("any") || fm.matches("all")) {
             return data.vcf.getMeta().getSamples();
@@ -606,7 +524,17 @@ public class Olorin extends JFrame implements ActionListener {
         c.gridy = 0;
         c.anchor = GridBagConstraints.WEST;
 
-        NumericMatcherEditor qme = new NumericMatcherEditor("Quality", 5, 0d, 10000d);
+        ArrayList<Double> qualityValues = getValues(5);
+        Double qualityMin;
+        Double qualityMax;
+        try {
+            qualityMin = Collections.min(qualityValues);
+            qualityMax = Collections.max(qualityValues);
+        } catch (NoSuchElementException nsee) {
+            qualityMin = 0d;
+            qualityMax = 0d;
+        }
+        NumericMatcherEditor qme = new NumericMatcherEditor("Quality", 5, qualityMin, qualityMax);
         matcherEditors.add(qme);
         infoFilterPanel.add(qme.getWidget(), c);
 
@@ -614,6 +542,9 @@ public class Olorin extends JFrame implements ActionListener {
 
         boolean csqSelected = false;
         for (int i = 0; i < fsd.getSelectedInfo().size(); i++) {
+            
+            
+            
             c.gridy = i + 1;
             String id = fsd.getSelectedInfo().get(i);
             String type = data.vcf.getMeta().getInfoObjects().get(id).getType();
@@ -641,7 +572,7 @@ public class Olorin extends JFrame implements ActionListener {
                     matcherEditors.add(nme);
                     infoFilterPanel.add(nme.getWidget(), c);
                 } else if (type.matches("Float") && number.matches("1")) {
-
+                    System.out.println(type);
                     ArrayList<Double> values = getValues(i + infoColOffset);
                     Double min;
                     Double max;
@@ -665,7 +596,8 @@ public class Olorin extends JFrame implements ActionListener {
 
         if (csqSelected) {
             // create filters for the consequence field
-            int csqOffset = infoColOffset + (fsd.getSelectedInfo().size());
+            // subtract 1 for the csq field
+            int csqOffset = infoColOffset + (fsd.getSelectedInfo().size() -1);
 
             NumericMatcherEditor nme;
             StringMatcherEditor sme;
@@ -748,7 +680,7 @@ public class Olorin extends JFrame implements ActionListener {
         return matcherEditors;
     }
 
-    private void drawIdeogram(ArrayList<SegmentMatch> m) throws IOException, FileFormatException {
+    private void drawIdeogram(ArrayList<SegmentMatch> m) {
         int chrNum = data.getChrNum();
         Collections.sort(m);
         HashMap<String, MarkerCollection> segHash = new HashMap<String, MarkerCollection>();
@@ -770,13 +702,23 @@ public class Olorin extends JFrame implements ActionListener {
             name = "resources/data/ideogram.gz";
             stream = getClass().getResourceAsStream(name);
             if (stream != null) {
-                stream = new GZIPInputStream(stream);
+                try {
+                    stream = new GZIPInputStream(stream);
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(null, "Can't Open 'resources/data/ideogram.gz'.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
         if (stream == null) {
             System.out.println("cannot find resource name '" + name + "'");
         }
-        db.read(new InputStreamReader(stream));
+        try {
+            db.read(new InputStreamReader(stream));
+        } catch (FileFormatException ex) {
+            Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(Olorin.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
         Vector<DataSlot> slots = new Vector<DataSlot>();
 
@@ -916,7 +858,7 @@ public class Olorin extends JFrame implements ActionListener {
     private void setFreqFilter(boolean freqFilter) {
         this.freqFilter = freqFilter;
     }
-    
+
     private Boolean getFreqFilter() {
         return this.freqFilter;
     }
@@ -924,7 +866,7 @@ public class Olorin extends JFrame implements ActionListener {
     private void setFreqCutoff(double freqCutoff) {
         this.freqCutoff = freqCutoff;
     }
-    
+
     private double getFreqCutoff() {
         return this.freqCutoff;
     }
@@ -932,7 +874,7 @@ public class Olorin extends JFrame implements ActionListener {
     private void setSelectedCols(ArrayList<Boolean> selectedCols) {
         this.selectedCols = selectedCols;
     }
-    
+
     private ArrayList<Boolean> getSelectedCols() {
         return this.selectedCols;
     }
@@ -940,7 +882,7 @@ public class Olorin extends JFrame implements ActionListener {
     private void setMinMatches(int minMatches) {
         this.minMatches = minMatches;
     }
-    
+
     private int getMinMatches() {
         return this.minMatches;
     }
@@ -948,271 +890,90 @@ public class Olorin extends JFrame implements ActionListener {
     private void setFreqFile(String freqFile) {
         this.freqFile = freqFile;
     }
-    
+
     private String getFreqFile() {
         return this.freqFile;
     }
 
-    class StringMatcherEditor {
+    private void showVariants() {
+        variants = GlazedLists.threadSafeList(new BasicEventList<Variant>());
+        variants.addAll(vcfData);
+        this.setTotalVariantCount(variants.size());
+        this.setCurrentVariantCount(variants.size());
+        this.setVariantCount();
+        EventList matcherEditors = createFilters(getinfoOffset());
+        FilterList filteredVariants = new FilterList(variants, new CompositeMatcherEditor(matcherEditors));
+        sortedFilteredVariants = new SortedList(filteredVariants, null);
+        sortedFilteredVariants.addListEventListener(this);
+        table = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedInfo(), getFreqFilter(), indIds)));
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        table.addMouseListener(this);
+        new TableComparatorChooser(table, sortedFilteredVariants, true);
+        variantsPane.setViewportView(table);
+        contentPanel.revalidate();
+        contentPanel.repaint();
+        exportVariants.setEnabled(true);
+        exportSegments.setEnabled(true);
+    }
 
-        private JPanel widget;
-        private TextComponentMatcherEditor tme;
+    @Override
+    public void listChanged(ListEvent le) {
+        this.setCurrentVariantCount(le.getSourceList().size());
+        setVariantCount();
+    }
+    
+    private void setVariantCount() {
+        variantCount.setText("Currently showing " + getCurrentVariantCount() + " of " + getTotalVariantCount() + " variants");
+    }
+    
+    public int getCurrentVariantCount() {
+        return currentVariantCount;
+    }
 
-        public StringMatcherEditor(String id, final int i) {
-            widget = new JPanel();
-            widget.add(new JLabel(id + ":"));
-            JTextField filterField = new JTextField(5);
-            widget.add(filterField);
-            TextFilterator idFilterator = new TextFilterator() {
+    public void setCurrentVariantCount(int currentVariantCount) {
+        this.currentVariantCount = currentVariantCount;
+    }
 
-                @Override
-                public void getFilterStrings(java.util.List baseList, Object e) {
-                    Variant variant = (Variant) e;
-                    baseList.add(variant.getTableArray().get(i));
-                }
-            };
-            tme = new TextComponentMatcherEditor(filterField, idFilterator);
-        }
+    public int getTotalVariantCount() {
+        return totalVariantCount;
+    }
 
-        public JPanel getWidget() {
-            return widget;
-        }
+    public void setTotalVariantCount(int totalVariantCount) {
+        this.totalVariantCount = totalVariantCount;
+    }
 
-        public TextComponentMatcherEditor getTextComponentMatcherEditor() {
-            return tme;
+    @Override
+    public void mouseClicked(MouseEvent me) {
+        int col = table.columnAtPoint(me.getPoint());
+        if (table.getColumnName(col).matches("Total effects")) {
+            int row = table.rowAtPoint(me.getPoint());
+            Variant selectedVariant = (Variant) sortedFilteredVariants.get(row);
+            ArrayList<VariantEffect> effects = selectedVariant.getVariantEffects();
+            VariantEffectsFrame vef = new VariantEffectsFrame(effects);
+            vef.setDefaultCloseOperation(VariantEffectsFrame.DISPOSE_ON_CLOSE);
+            vef.pack();
+            vef.setVisible(true);
         }
     }
 
-    private static class NumericMatcherEditor extends AbstractMatcherEditor implements ActionListener, ChangeListener {
-
-        private JComboBox signChooser;
-        private JTextField valueField;
-        private JSlider slider;
-        private String id;
-        private int i;
-        private JPanel widget;
-        private ArrayList<String> selectedCols;
-
-        private NumericMatcherEditor(String id, int i) {
-            this.id = id;
-            this.i = i;
-            this.widget = new JPanel();
-
-            widget.add(new JLabel(id + ":"));
-
-            this.signChooser = new JComboBox(new Object[]{">", "<"});
-            this.signChooser.addActionListener(this);
-            widget.add(signChooser);
-
-            this.valueField = new JTextField(5);
-            valueField.setText("0");
-            this.valueField.addActionListener(this);
-            widget.add(valueField);
-        }
-
-        private NumericMatcherEditor(String id, int i, Double min, Double max) {
-            this.id = id;
-            this.i = i;
-            this.widget = new JPanel();
-
-            widget.add(new JLabel(id + ":"));
-
-            this.signChooser = new JComboBox(new Object[]{">", "<"});
-            this.signChooser.addActionListener(this);
-            widget.add(signChooser);
-
-            this.valueField = new JTextField(5);
-            valueField.setText("0");
-            this.valueField.addActionListener(this);
-            widget.add(valueField);
-
-            this.slider = new JSlider(min.intValue(), max.intValue());
-            this.slider.setPaintLabels(true);
-            this.slider.addChangeListener(this);
-            widget.add(slider);
-        }
-
-        public JPanel getWidget() {
-            return widget;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            final String sign = (String) this.signChooser.getSelectedItem();
-            final String cutoff = (String) this.valueField.getText();
-            if (sign == null || cutoff == null) {
-                this.fireMatchAll();
-            } else {
-                this.fireChanged(new NumericMatcher(i, sign, cutoff));
-            }
-        }
-
-        @Override
-        public void stateChanged(ChangeEvent ce) {
-            this.valueField.setText(Integer.toString(this.slider.getValue()));
-            final String sign = (String) this.signChooser.getSelectedItem();
-            final String cutoff = (String) this.valueField.getText();
-
-            if (sign == null || cutoff == null) {
-                this.fireMatchAll();
-            } else {
-                this.fireChanged(new NumericMatcher(i, sign, cutoff));
-            }
-        }
-
-        private static class NumericMatcher implements Matcher {
-
-            private final String sign;
-            private final String cutoff;
-            private final int i;
-
-            public NumericMatcher(int i, String sign, String cutoff) {
-                this.sign = sign;
-                this.cutoff = cutoff;
-                this.i = i;
-            }
-
-            @Override
-            public boolean matches(Object item) {
-                final Variant variant = (Variant) item;
-                String value = (String) variant.getTableArray().get(i);
-                if (!value.matches(".")) {
-                    if (sign.matches("<")) {
-                        if (Double.parseDouble(value) < Double.parseDouble(cutoff)) {
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    } else if (sign.matches(">")) {
-                        if (Double.parseDouble(value) > Double.parseDouble(cutoff)) {
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    } else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
-            }
-        }
+    @Override
+    public void mousePressed(MouseEvent me) {
+        
     }
 
-    private static class FlagMatcherEditor extends AbstractMatcherEditor implements ActionListener {
-
-        private JCheckBox flagBox;
-        private String id;
-        private int i;
-        private JPanel widget;
-        private ArrayList<String> selectedCols;
-
-        public FlagMatcherEditor(String id, int i) {
-            this.id = id;
-            this.i = i;
-            this.widget = new JPanel();
-
-            widget.add(new JLabel(id + ":"));
-            this.flagBox = new JCheckBox();
-            this.flagBox.addActionListener(this);
-            widget.add(flagBox);
-        }
-
-        public JPanel getWidget() {
-            return widget;
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            final Boolean flag = this.flagBox.isSelected();
-            if (flag) {
-                this.fireChanged(new FlagMatcher(i, flag));
-            } else {
-                this.fireMatchAll();
-            }
-        }
-
-        private static class FlagMatcher implements Matcher {
-
-            private final Boolean flag;
-            private final int i;
-
-            public FlagMatcher(int i, Boolean flag) {
-                this.flag = flag;
-                this.i = i;
-            }
-
-            @Override
-            public boolean matches(Object item) {
-                final Variant variant = (Variant) item;
-                String value = (String) variant.getTableArray().get(i);
-                if (value.matches(".")) {
-                    return false;
-                } else {
-                    return true;
-                }
-            }
-        }
+    @Override
+    public void mouseReleased(MouseEvent me) {
+        
     }
 
-    public static class VariantTableFormat implements TableFormat {
-
-        private ArrayList<String> usrSelectedCols;
-        private ArrayList<String> indIds;
-        public ArrayList<String> cols;
-
-        VariantTableFormat(ArrayList<String> selectedCols, Boolean freqFilter, ArrayList<String> indIds) {
-            usrSelectedCols = selectedCols;
-            cols = new ArrayList();
-            cols.add("Chromosome");
-            cols.add("Position");
-            cols.add("ID");
-            cols.add("Ref");
-            cols.add("Alt");
-            cols.add("Quality");
-            cols.add("Filter");
-            if (freqFilter) {
-                // change this to be the freq file name?
-                cols.add("Frequency");
-            }
-            cols.addAll(indIds);
-            Boolean csqSelected = false;
-            for (String s : usrSelectedCols) {
-                if (s.matches("CSQ")) {
-                    csqSelected = true;
-                }
-                cols.add(s);
-            }
-
-            if (csqSelected) {
-                cols.add("CSQ-Gene");
-                cols.add("CSQ-Consequence");
-                cols.add("CSQ-Amino acid change");
-                cols.add("CSQ-Condel prediction");
-                cols.add("CSQ-Condel score");
-                cols.add("CSQ-SIFT prediction");
-                cols.add("CSQ-SIFT score");
-                cols.add("CSQ-PloyPhen prediction");
-                cols.add("CSQ-PolyPhen score");
-                cols.add("CSQ-Grantham score");
-                cols.add("CSQ-GERP score");
-            }
-        }
-
-        @Override
-        public int getColumnCount() {
-            return cols.size();
-        }
-
-        @Override
-        public String getColumnName(int i) {
-            return cols.get(i);
-        }
-
-        @Override
-        public Object getColumnValue(Object e, int i) {
-            Variant v = (Variant) e;
-            return v.getTableArray().get(i);
-        }
+    @Override
+    public void mouseEntered(MouseEvent me) {
+        
     }
+
+    @Override
+    public void mouseExited(MouseEvent me) {
+        
+    }
+    
 }
