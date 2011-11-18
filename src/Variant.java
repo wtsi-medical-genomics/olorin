@@ -2,6 +2,8 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import javax.swing.JList;
+import javax.swing.ListSelectionModel;
 import org.apache.commons.lang3.StringUtils;
 
 public class Variant {
@@ -181,12 +183,13 @@ public class Variant {
         for (String s : selectedCols) {
             if (s.matches("CSQ")) {
                 setCsqSelected(true);
-            }
-            String value = getInfo().get(s);
-            if (value != null) {
-                tableArray.add(value);
             } else {
-                tableArray.add(".");
+                String value = getInfo().get(s);
+                if (value != null) {
+                    tableArray.add(value);
+                } else {
+                    tableArray.add(".");
+                }
             }
         }
 
@@ -203,6 +206,7 @@ public class Variant {
             tableArray.add(ve.getPolyphenScore());
             tableArray.add(ve.getGranthamScore());
             tableArray.add(this.getGerpScore());
+            tableArray.add(Integer.toString(variantEffects.size()));
         }
     }
 
@@ -293,9 +297,53 @@ public class Variant {
     }
 
     private VariantEffect getMostDamagingEffect() {
-        if (variantEffects.size() > 0) {
-            //return the effect with the highest condel score
+        if (variantEffects.size() > 1) {
+
+            VariantEffect mostDamaging = new VariantEffect();
+
+            for (VariantEffect ve : variantEffects) {
+
+                String consequence = ve.getConsequence();
+
+                if (consequence.contains("COMPLEX_INDEL")
+                        || consequence.contains("STOP_LOST")
+                        || consequence.contains("FRAMESHIFT_CODING")
+                        || consequence.contains("ESSENTIAL_SPLICE_SITE")
+                        || consequence.contains("STOP_GAINED")
+                        || consequence.contains("SPLICE_SITE")
+                        || consequence.contains("NON_SYNONYMOUS_CODING")) {
+
+                    ve.setDamageScore(3);
+
+                } else if (consequence.contains("WITHIN_MATURE_miRNA")
+                        ||consequence.contains("5PRIME_UTR")
+                        ||consequence.contains("3PRIME_UTR")
+                        ||consequence.contains("SYNONYMOUS_CODING")) {
+                    ve.setDamageScore(2);
+                    
+                } else if (consequence.contains("INTERGENIC")
+                        ||consequence.contains("UPSTREAM")
+                        ||consequence.contains("DOWNSTREAM")
+                        ||consequence.contains("INTRONIC")
+                        ||consequence.contains("-")) {
+                    ve.setDamageScore(1);
+                } else {
+                    ve.setDamageScore(0);
+                }
+
+                System.out.println(consequence + " " + ve.getDamageScore());
+
+                if (ve.getDamageScore() > mostDamaging.getDamageScore()) {
+                  mostDamaging = ve;  
+                } 
+            }
+            System.out.println("most damaging " + mostDamaging.getConsequence() + " " + mostDamaging.getDamageScore());
+            return mostDamaging;
+
+        } else if (variantEffects.size() == 1) {
+            
             return variantEffects.get(0);
+            
         } else {
             // if there are no variant effect then create an empty object
             return new VariantEffect();
@@ -304,5 +352,9 @@ public class Variant {
 
     private void setCsqSelected(boolean b) {
         csqSelected = b;
+    }
+
+    ArrayList<VariantEffect> getVariantEffects() {
+        return variantEffects;
     }
 }
