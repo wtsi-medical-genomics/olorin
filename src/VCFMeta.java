@@ -26,7 +26,7 @@ public class VCFMeta {
         sampleHash = new HashMap<String, Integer>();
     }
 
-    public void add(String s) {
+    public void add(String s) {    
         if (s.startsWith("##")) {
             s = s.substring(2);
             if (s.startsWith("INFO")) {
