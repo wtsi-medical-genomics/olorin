@@ -1,6 +1,6 @@
 <?xml version="1.1" encoding="UTF-8" ?>
 
-<Form version="1.3" maxVersion="1.7" type="org.netbeans.modules.form.forminfo.JDialogFormInfo">
+<Form version="1.5" maxVersion="1.7" type="org.netbeans.modules.form.forminfo.JDialogFormInfo">
   <Properties>
     <Property name="defaultCloseOperation" type="int" value="2"/>
   </Properties>
@@ -26,11 +26,7 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Component id="cancelBut" min="-2" max="-2" attributes="0"/>
-              <EmptySpace pref="63" max="32767" attributes="0"/>
-              <Component id="clearAllBut" min="-2" max="-2" attributes="0"/>
-              <EmptySpace type="separate" max="-2" attributes="0"/>
-              <Component id="selectAllBut" min="-2" max="-2" attributes="0"/>
-              <EmptySpace min="-2" pref="56" max="-2" attributes="0"/>
+              <EmptySpace pref="336" max="32767" attributes="0"/>
               <Component id="okBut" min="-2" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -39,15 +35,13 @@
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="0" attributes="0">
-              <Component id="jTabbedPane1" min="-2" pref="519" max="-2" attributes="0"/>
+              <Component id="jTabbedPane1" min="-2" pref="507" max="-2" attributes="0"/>
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="3" attributes="0">
                   <Component id="cancelBut" alignment="3" min="-2" max="-2" attributes="0"/>
                   <Component id="okBut" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="clearAllBut" alignment="3" min="-2" max="-2" attributes="0"/>
-                  <Component id="selectAllBut" alignment="3" min="-2" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace pref="20" max="32767" attributes="0"/>
+              <EmptySpace max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -60,8 +54,8 @@
         <Container class="javax.swing.JPanel" name="filteringPanel">
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
-              <JTabbedPaneConstraints tabName="Filtering Options">
-                <Property name="tabTitle" type="java.lang.String" value="Filtering Options"/>
+              <JTabbedPaneConstraints tabName="General Options">
+                <Property name="tabTitle" type="java.lang.String" value="General Options"/>
               </JTabbedPaneConstraints>
             </Constraint>
           </Constraints>
@@ -74,11 +68,13 @@
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Group type="102" attributes="0">
                               <Group type="103" groupAlignment="0" attributes="0">
-                                  <Component id="minMatchSlider" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  <Component id="jSeparator1" alignment="0" pref="428" max="32767" attributes="0"/>
+                                  <Component id="jSeparator1" alignment="0" pref="408" max="32767" attributes="0"/>
+                                  <Group type="103" alignment="0" groupAlignment="1" max="-2" attributes="0">
+                                      <Component id="minMatchSlider" alignment="0" max="32767" attributes="1"/>
+                                      <Component id="jLabel1" alignment="0" max="32767" attributes="1"/>
+                                  </Group>
                               </Group>
-                              <EmptySpace min="-2" pref="63" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" pref="187" max="-2" attributes="0"/>
                           </Group>
                           <Group type="102" alignment="0" attributes="0">
                               <Component id="freqFilterBut" min="-2" max="-2" attributes="0"/>
@@ -93,7 +89,7 @@
                               </Group>
                               <EmptySpace max="32767" attributes="0"/>
                               <Component id="openFreqBut" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace min="-2" pref="191" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" pref="295" max="-2" attributes="0"/>
                           </Group>
                       </Group>
                   </Group>
@@ -110,7 +106,7 @@
                       <Component id="jSeparator1" min="-2" pref="10" max="-2" attributes="0"/>
                       <EmptySpace type="separate" max="-2" attributes="0"/>
                       <Component id="freqFilterBut" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace pref="22" max="32767" attributes="0"/>
+                      <EmptySpace pref="10" max="32767" attributes="0"/>
                       <Group type="103" groupAlignment="1" attributes="0">
                           <Group type="102" attributes="0">
                               <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
@@ -179,23 +175,242 @@
             </Component>
           </SubComponents>
         </Container>
-        <Container class="javax.swing.JScrollPane" name="resultsPanel">
+        <Container class="javax.swing.JPanel" name="jPanel1">
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
-              <JTabbedPaneConstraints tabName="Results Options">
-                <Property name="tabTitle" type="java.lang.String" value="Results Options"/>
+              <JTabbedPaneConstraints tabName="Info Field Options">
+                <Property name="tabTitle" type="java.lang.String" value="Info Field Options"/>
               </JTabbedPaneConstraints>
             </Constraint>
           </Constraints>
 
-          <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
+          <Layout>
+            <DimensionLayout dim="0">
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" alignment="0" attributes="0">
+                      <EmptySpace min="-2" pref="112" max="-2" attributes="0"/>
+                      <Component id="clearAllBut" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="66" max="-2" attributes="0"/>
+                      <Component id="selectAllBut" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace pref="134" max="32767" attributes="0"/>
+                  </Group>
+                  <Group type="103" rootIndex="1" groupAlignment="0" attributes="0">
+                      <Component id="resultsPanel" alignment="0" pref="511" max="32767" attributes="0"/>
+                  </Group>
+              </Group>
+            </DimensionLayout>
+            <DimensionLayout dim="1">
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" attributes="0">
+                      <EmptySpace pref="432" max="32767" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="selectAllBut" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="clearAllBut" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                  </Group>
+                  <Group type="103" rootIndex="1" groupAlignment="0" attributes="0">
+                      <Group type="102" alignment="1" attributes="0">
+                          <Component id="resultsPanel" min="-2" pref="424" max="-2" attributes="0"/>
+                          <EmptySpace pref="37" max="32767" attributes="0"/>
+                      </Group>
+                  </Group>
+              </Group>
+            </DimensionLayout>
+          </Layout>
           <SubComponents>
-            <Component class="javax.swing.JTable" name="vcfTable">
+            <Container class="javax.swing.JScrollPane" name="resultsPanel">
+
+              <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
+              <SubComponents>
+                <Component class="javax.swing.JTable" name="vcfTable">
+                  <Properties>
+                    <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                      <Connection code="new FilterTableModel(meta)" type="code"/>
+                    </Property>
+                  </Properties>
+                </Component>
+              </SubComponents>
+            </Container>
+            <Component class="javax.swing.JToggleButton" name="clearAllBut">
               <Properties>
-                <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
-                  <Connection code="new FilterTableModel(meta)" type="code"/>
-                </Property>
+                <Property name="text" type="java.lang.String" value="Clear All"/>
               </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearAllButActionPerformed"/>
+              </Events>
+            </Component>
+            <Component class="javax.swing.JToggleButton" name="selectAllBut">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Select All"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="selectAllButActionPerformed"/>
+              </Events>
+            </Component>
+          </SubComponents>
+        </Container>
+        <Container class="javax.swing.JPanel" name="CsqPanel">
+          <Constraints>
+            <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
+              <JTabbedPaneConstraints tabName="Consequence Options">
+                <Property name="tabTitle" type="java.lang.String" value="Consequence Options"/>
+              </JTabbedPaneConstraints>
+            </Constraint>
+          </Constraints>
+
+          <Layout>
+            <DimensionLayout dim="0">
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" alignment="0" attributes="0">
+                      <EmptySpace min="-2" pref="36" max="-2" attributes="0"/>
+                      <Group type="103" groupAlignment="0" attributes="0">
+                          <Component id="csqGerpCB" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="csqCondelCB" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="csqPolyPhenCB" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="csqSiftCB" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="csqAACB" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="csqCsqCB" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="csqFeatureCB" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="csqGeneCB" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Group type="102" alignment="0" attributes="1">
+                              <EmptySpace min="-2" pref="70" max="-2" attributes="0"/>
+                              <Component id="csqSelectAllBut" min="-2" max="-2" attributes="0"/>
+                              <EmptySpace min="-2" pref="67" max="-2" attributes="0"/>
+                              <Component id="csqClearAllBut" min="-2" max="-2" attributes="0"/>
+                          </Group>
+                          <Component id="csqGranthamCB" alignment="0" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace max="-2" attributes="0"/>
+                  </Group>
+              </Group>
+            </DimensionLayout>
+            <DimensionLayout dim="1">
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Group type="102" alignment="0" attributes="0">
+                      <EmptySpace max="-2" attributes="0"/>
+                      <Component id="csqGeneCB" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Component id="csqFeatureCB" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Component id="csqCsqCB" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Component id="csqAACB" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="18" max="-2" attributes="0"/>
+                      <Component id="csqPolyPhenCB" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Component id="csqSiftCB" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Component id="csqCondelCB" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace min="-2" pref="18" max="-2" attributes="0"/>
+                      <Component id="csqGranthamCB" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Component id="csqGerpCB" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace pref="64" max="32767" attributes="0"/>
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="csqSelectAllBut" alignment="3" min="-2" max="-2" attributes="0"/>
+                          <Component id="csqClearAllBut" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                  </Group>
+              </Group>
+            </DimensionLayout>
+          </Layout>
+          <SubComponents>
+            <Component class="javax.swing.JCheckBox" name="csqGeneCB">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Gene - Ensembl stable ID of affected gene"/>
+              </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="csqGeneCB.setEnabled(csq);"/>
+              </AuxValues>
+            </Component>
+            <Component class="javax.swing.JCheckBox" name="csqFeatureCB">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Feature - Ensembl stable ID of feature"/>
+              </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="csqFeatureCB.setEnabled(csq);"/>
+              </AuxValues>
+            </Component>
+            <Component class="javax.swing.JCheckBox" name="csqCsqCB">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Consequence - consequence type of this variation"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="csqCsqCBActionPerformed"/>
+              </Events>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="csqCsqCB.setEnabled(csq);"/>
+              </AuxValues>
+            </Component>
+            <Component class="javax.swing.JCheckBox" name="csqAACB">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Amino acid change - only given if the variation affects the protein-coding sequence"/>
+              </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="csqAACB.setEnabled(csq);"/>
+              </AuxValues>
+            </Component>
+            <Component class="javax.swing.JCheckBox" name="csqPolyPhenCB">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="PolyPhen - the PolyPhen prediction and score"/>
+              </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="csqPolyPhenCB.setEnabled(csq);"/>
+              </AuxValues>
+            </Component>
+            <Component class="javax.swing.JCheckBox" name="csqSiftCB">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="SIFT - the SIFT prediction and score"/>
+              </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="csqSiftCB.setEnabled(csq);"/>
+              </AuxValues>
+            </Component>
+            <Component class="javax.swing.JCheckBox" name="csqCondelCB">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Condel - the Condel consensus prediction and score"/>
+              </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="csqCondelCB.setEnabled(csq);"/>
+              </AuxValues>
+            </Component>
+            <Component class="javax.swing.JCheckBox" name="csqGranthamCB">
+              <Properties>
+                <Property name="text" type="java.lang.String" value=" Grantham - the Grantham score"/>
+              </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="csqGranthamCB.setEnabled(csq);"/>
+              </AuxValues>
+            </Component>
+            <Component class="javax.swing.JCheckBox" name="csqGerpCB">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="GERP - the GERP score"/>
+              </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="csqGerpCB.setEnabled(csq);"/>
+              </AuxValues>
+            </Component>
+            <Component class="javax.swing.JButton" name="csqSelectAllBut">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Select All"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="csqSelectAllButActionPerformed"/>
+              </Events>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="csqSelectAllBut.setEnabled(csq);"/>
+              </AuxValues>
+            </Component>
+            <Component class="javax.swing.JButton" name="csqClearAllBut">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Clear All"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="csqClearAllButActionPerformed"/>
+              </Events>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="csqClearAllBut.setEnabled(csq);"/>
+              </AuxValues>
             </Component>
           </SubComponents>
         </Container>
@@ -215,22 +430,6 @@
       </Properties>
       <Events>
         <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="okButActionPerformed"/>
-      </Events>
-    </Component>
-    <Component class="javax.swing.JToggleButton" name="clearAllBut">
-      <Properties>
-        <Property name="text" type="java.lang.String" value="Clear All"/>
-      </Properties>
-      <Events>
-        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearAllButActionPerformed"/>
-      </Events>
-    </Component>
-    <Component class="javax.swing.JToggleButton" name="selectAllBut">
-      <Properties>
-        <Property name="text" type="java.lang.String" value="Select All"/>
-      </Properties>
-      <Events>
-        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="selectAllButActionPerformed"/>
       </Events>
     </Component>
   </SubComponents>

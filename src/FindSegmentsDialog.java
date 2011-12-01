@@ -2,6 +2,7 @@
 import java.awt.Cursor;
 import java.util.ArrayList;
 import java.util.HashMap;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JSlider;
 
@@ -20,14 +21,16 @@ import javax.swing.JSlider;
  * @author jm20
  */
 public class FindSegmentsDialog extends javax.swing.JDialog {
+
     private VCFMeta meta;
-    private ArrayList<String> selectedInfo;
+    private ArrayList<String> selectedCols;
     private boolean success;
     private int selected;
     private int minMatches;
     private double freqCutoff;
     private String freqFile;
-    private ArrayList<Boolean> selectedCols;
+    private ArrayList<Boolean> filterTable;
+    private Boolean csq;
 
     /** Creates new form FindSegmentsDialog3 */
     public FindSegmentsDialog(java.awt.Frame parent, boolean modal) {
@@ -35,12 +38,14 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
         initComponents();
     }
 
-    FindSegmentsDialog(int s, VCFMeta m, ArrayList<Boolean> oldSelectedCols) {
+    FindSegmentsDialog(int s, VCFMeta m, ArrayList<Boolean> oldSelectedCols, Boolean b) {
         meta = m;
         selected = s;
-        setMinMatches(selected);        
+        setMinMatches(selected);
+        csq = b;
         initComponents();
         setOldSelectedCols(oldSelectedCols);
+
     }
 
     /** This method is called from within the constructor to
@@ -63,12 +68,25 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
         freqFilterBut = new javax.swing.JRadioButton();
         openFreqBut = new javax.swing.JButton();
         freqText = new javax.swing.JTextField();
+        jPanel1 = new javax.swing.JPanel();
         resultsPanel = new javax.swing.JScrollPane();
         vcfTable = new javax.swing.JTable();
-        cancelBut = new javax.swing.JButton();
-        okBut = new javax.swing.JButton();
         clearAllBut = new javax.swing.JToggleButton();
         selectAllBut = new javax.swing.JToggleButton();
+        CsqPanel = new javax.swing.JPanel();
+        csqGeneCB = new javax.swing.JCheckBox();
+        csqFeatureCB = new javax.swing.JCheckBox();
+        csqCsqCB = new javax.swing.JCheckBox();
+        csqAACB = new javax.swing.JCheckBox();
+        csqPolyPhenCB = new javax.swing.JCheckBox();
+        csqSiftCB = new javax.swing.JCheckBox();
+        csqCondelCB = new javax.swing.JCheckBox();
+        csqGranthamCB = new javax.swing.JCheckBox();
+        csqGerpCB = new javax.swing.JCheckBox();
+        csqSelectAllBut = new javax.swing.JButton();
+        csqClearAllBut = new javax.swing.JButton();
+        cancelBut = new javax.swing.JButton();
+        okBut = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -108,10 +126,11 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
                 .add(filteringPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(filteringPanelLayout.createSequentialGroup()
                         .add(filteringPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(minMatchSlider, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                            .add(jLabel1)
-                            .add(jSeparator1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE))
-                        .add(63, 63, 63))
+                            .add(jSeparator1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE)
+                            .add(filteringPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                                .add(org.jdesktop.layout.GroupLayout.LEADING, minMatchSlider, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .add(org.jdesktop.layout.GroupLayout.LEADING, jLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .add(187, 187, 187))
                     .add(filteringPanelLayout.createSequentialGroup()
                         .add(freqFilterBut)
                         .addContainerGap(288, Short.MAX_VALUE))
@@ -123,7 +142,7 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
                             .add(org.jdesktop.layout.GroupLayout.LEADING, jLabel2, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .add(openFreqBut)
-                        .add(191, 191, 191))))
+                        .add(295, 295, 295))))
         );
         filteringPanelLayout.setVerticalGroup(
             filteringPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
@@ -136,7 +155,7 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
                 .add(jSeparator1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 10, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .add(18, 18, 18)
                 .add(freqFilterBut)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 22, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 10, Short.MAX_VALUE)
                 .add(filteringPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
                     .add(filteringPanelLayout.createSequentialGroup()
                         .add(jLabel2)
@@ -151,26 +170,10 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
                 .add(107, 107, 107))
         );
 
-        jTabbedPane1.addTab("Filtering Options", filteringPanel);
+        jTabbedPane1.addTab("General Options", filteringPanel);
 
         vcfTable.setModel(new FilterTableModel(meta));
         resultsPanel.setViewportView(vcfTable);
-
-        jTabbedPane1.addTab("Results Options", resultsPanel);
-
-        cancelBut.setText("Cancel");
-        cancelBut.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cancelButActionPerformed(evt);
-            }
-        });
-
-        okBut.setText("Filter");
-        okBut.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                okButActionPerformed(evt);
-            }
-        });
 
         clearAllBut.setText("Clear All");
         clearAllBut.addActionListener(new java.awt.event.ActionListener() {
@@ -186,6 +189,148 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
             }
         });
 
+        org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel1Layout.createSequentialGroup()
+                .add(112, 112, 112)
+                .add(clearAllBut)
+                .add(66, 66, 66)
+                .add(selectAllBut)
+                .addContainerGap(134, Short.MAX_VALUE))
+            .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                .add(resultsPanel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 511, Short.MAX_VALUE))
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(jPanel1Layout.createSequentialGroup()
+                .addContainerGap(432, Short.MAX_VALUE)
+                .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(selectAllBut)
+                    .add(clearAllBut)))
+            .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
+                    .add(resultsPanel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 424, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(37, Short.MAX_VALUE)))
+        );
+
+        jTabbedPane1.addTab("Info Field Options", jPanel1);
+
+        csqGeneCB.setText("Gene - Ensembl stable ID of affected gene");
+        csqGeneCB.setEnabled(csq);
+
+        csqFeatureCB.setText("Feature - Ensembl stable ID of feature");
+        csqFeatureCB.setEnabled(csq);
+
+        csqCsqCB.setText("Consequence - consequence type of this variation");
+        csqCsqCB.setEnabled(csq);
+        csqCsqCB.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                csqCsqCBActionPerformed(evt);
+            }
+        });
+
+        csqAACB.setText("Amino acid change - only given if the variation affects the protein-coding sequence");
+        csqAACB.setEnabled(csq);
+
+        csqPolyPhenCB.setText("PolyPhen - the PolyPhen prediction and score");
+        csqPolyPhenCB.setEnabled(csq);
+
+        csqSiftCB.setText("SIFT - the SIFT prediction and score");
+        csqSiftCB.setEnabled(csq);
+
+        csqCondelCB.setText("Condel - the Condel consensus prediction and score");
+        csqCondelCB.setEnabled(csq);
+
+        csqGranthamCB.setText(" Grantham - the Grantham score");
+        csqGranthamCB.setEnabled(csq);
+
+        csqGerpCB.setText("GERP - the GERP score");
+        csqGerpCB.setEnabled(csq);
+
+        csqSelectAllBut.setText("Select All");
+        csqSelectAllBut.setEnabled(csq);
+        csqSelectAllBut.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                csqSelectAllButActionPerformed(evt);
+            }
+        });
+
+        csqClearAllBut.setText("Clear All");
+        csqClearAllBut.setEnabled(csq);
+        csqClearAllBut.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                csqClearAllButActionPerformed(evt);
+            }
+        });
+
+        org.jdesktop.layout.GroupLayout CsqPanelLayout = new org.jdesktop.layout.GroupLayout(CsqPanel);
+        CsqPanel.setLayout(CsqPanelLayout);
+        CsqPanelLayout.setHorizontalGroup(
+            CsqPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(CsqPanelLayout.createSequentialGroup()
+                .add(36, 36, 36)
+                .add(CsqPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+                    .add(csqGerpCB)
+                    .add(csqCondelCB)
+                    .add(csqPolyPhenCB)
+                    .add(csqSiftCB)
+                    .add(csqAACB)
+                    .add(csqCsqCB)
+                    .add(csqFeatureCB)
+                    .add(csqGeneCB)
+                    .add(CsqPanelLayout.createSequentialGroup()
+                        .add(70, 70, 70)
+                        .add(csqSelectAllBut)
+                        .add(67, 67, 67)
+                        .add(csqClearAllBut))
+                    .add(csqGranthamCB))
+                .addContainerGap())
+        );
+        CsqPanelLayout.setVerticalGroup(
+            CsqPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
+            .add(CsqPanelLayout.createSequentialGroup()
+                .addContainerGap()
+                .add(csqGeneCB)
+                .add(18, 18, 18)
+                .add(csqFeatureCB)
+                .add(18, 18, 18)
+                .add(csqCsqCB)
+                .add(18, 18, 18)
+                .add(csqAACB)
+                .add(18, 18, 18)
+                .add(csqPolyPhenCB)
+                .add(18, 18, 18)
+                .add(csqSiftCB)
+                .add(18, 18, 18)
+                .add(csqCondelCB)
+                .add(18, 18, 18)
+                .add(csqGranthamCB)
+                .add(18, 18, 18)
+                .add(csqGerpCB)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 64, Short.MAX_VALUE)
+                .add(CsqPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
+                    .add(csqSelectAllBut)
+                    .add(csqClearAllBut)))
+        );
+
+        jTabbedPane1.addTab("Consequence Options", CsqPanel);
+
+        cancelBut.setText("Cancel");
+        cancelBut.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cancelButActionPerformed(evt);
+            }
+        });
+
+        okBut.setText("Filter");
+        okBut.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                okButActionPerformed(evt);
+            }
+        });
+
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -194,25 +339,19 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(cancelBut)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 63, Short.MAX_VALUE)
-                .add(clearAllBut)
-                .add(18, 18, 18)
-                .add(selectAllBut)
-                .add(56, 56, 56)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 336, Short.MAX_VALUE)
                 .add(okBut)
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
             .add(layout.createSequentialGroup()
-                .add(jTabbedPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 519, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
+                .add(jTabbedPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 507, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
                 .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
                     .add(cancelBut)
-                    .add(okBut)
-                    .add(clearAllBut)
-                    .add(selectAllBut))
-                .addContainerGap(20, Short.MAX_VALUE))
+                    .add(okBut))
+                .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pack();
@@ -223,19 +362,50 @@ private void freqCutoffFieldActionPerformed(java.awt.event.ActionEvent evt) {//G
 }//GEN-LAST:event_freqCutoffFieldActionPerformed
 
 private void okButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButActionPerformed
-    selectedCols = ((FilterTableModel) vcfTable.getModel()).getSelected();
-    selectedInfo = new ArrayList<String>();
+    filterTable = ((FilterTableModel) vcfTable.getModel()).getSelected();
+    selectedCols = new ArrayList<String>();
     ArrayList<HashMap<String, String>> infos = meta.getInfo();
     HashMap<String, String> info;
     String id;
     for (int i = 0; i < meta.info.size(); i++) {
-        if (selectedCols.get(i)) {
+        if (filterTable.get(i)) {
             info = infos.get(i);
             id = info.get("ID");
-            selectedInfo.add(id);
+            selectedCols.add(id);
 //            selectedInfo.add(meta.getInfo().get(i).get("ID"));
         }
     }
+
+    if (csq) {
+        if (this.csqGeneCB.isSelected()) {
+            selectedCols.add("gene");
+        }
+        if (this.csqFeatureCB.isSelected()) {
+            selectedCols.add("feature");
+        }
+        if (this.csqCsqCB.isSelected()) {
+            selectedCols.add("csq");
+        }
+        if (this.csqAACB.isSelected()) {
+            selectedCols.add("aa");
+        }
+        if (this.csqSiftCB.isSelected()) {
+            selectedCols.add("sift");
+        }
+        if (this.csqPolyPhenCB.isSelected()) {
+            selectedCols.add("poly");
+        }
+        if (this.csqCondelCB.isSelected()) {
+            selectedCols.add("condel");
+        }
+        if (this.csqGranthamCB.isSelected()) {
+            selectedCols.add("grantham");
+        }
+        if (this.csqGerpCB.isSelected()) {
+            selectedCols.add("gerp");
+        }
+    }
+
     setFreqFile(freqText.getText());
     setFreqCutoff(Double.parseDouble(freqCutoffField.getText()));
     setMinMatches(minMatchSlider.getValue());
@@ -273,6 +443,74 @@ private void selectAllButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     }
 }//GEN-LAST:event_selectAllButActionPerformed
 
+    private void csqCsqCBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_csqCsqCBActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_csqCsqCBActionPerformed
+
+    private void csqClearAllButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_csqClearAllButActionPerformed
+
+        csqAACB.setSelected(false);
+        csqClearAllBut.setSelected(false);
+        csqCondelCB.setSelected(false);
+        csqCsqCB.setSelected(false);
+        csqFeatureCB.setSelected(false);
+        csqGeneCB.setSelected(false);
+        csqGerpCB.setSelected(false);
+        csqGranthamCB.setSelected(false);
+        csqPolyPhenCB.setSelected(false);
+        csqSiftCB.setSelected(false);
+    }
+
+    public JCheckBox getCsqAACB() {
+        return csqAACB;
+    }
+
+    public JCheckBox getCsqCondelCB() {
+        return csqCondelCB;
+    }
+
+    public JCheckBox getCsqGranthamCB() {
+        return csqGranthamCB;
+    }
+
+    public JCheckBox getCsqCsqCB() {
+        return csqCsqCB;
+    }
+
+    public JCheckBox getCsqFeatureCB() {
+        return csqFeatureCB;
+    }
+
+    public JCheckBox getCsqGeneCB() {
+        return csqGeneCB;
+    }
+
+    public JCheckBox getCsqGerpCB() {
+        return csqGerpCB;
+    }
+
+    public JCheckBox getCsqPolyPhenCB() {
+        return csqPolyPhenCB;
+    }
+
+    public JCheckBox getCsqSiftCB() {
+        return csqSiftCB;
+    }//GEN-LAST:event_csqClearAllButActionPerformed
+
+    private void csqSelectAllButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_csqSelectAllButActionPerformed
+
+        csqAACB.setSelected(true);
+        csqClearAllBut.setSelected(true);
+        csqCondelCB.setSelected(true);
+        csqCsqCB.setSelected(true);
+        csqFeatureCB.setSelected(true);
+        csqGeneCB.setSelected(true);
+        csqGerpCB.setSelected(true);
+        csqGranthamCB.setSelected(true);
+        csqPolyPhenCB.setSelected(true);
+        csqSiftCB.setSelected(true);
+    }//GEN-LAST:event_csqSelectAllButActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -280,7 +518,7 @@ private void selectAllButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
          */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
@@ -317,8 +555,20 @@ private void selectAllButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         });
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JPanel CsqPanel;
     private javax.swing.JButton cancelBut;
     private javax.swing.JToggleButton clearAllBut;
+    private javax.swing.JCheckBox csqAACB;
+    private javax.swing.JButton csqClearAllBut;
+    private javax.swing.JCheckBox csqCondelCB;
+    private javax.swing.JCheckBox csqCsqCB;
+    private javax.swing.JCheckBox csqFeatureCB;
+    private javax.swing.JCheckBox csqGeneCB;
+    private javax.swing.JCheckBox csqGerpCB;
+    private javax.swing.JCheckBox csqGranthamCB;
+    private javax.swing.JCheckBox csqPolyPhenCB;
+    private javax.swing.JButton csqSelectAllBut;
+    private javax.swing.JCheckBox csqSiftCB;
     private javax.swing.JPanel filteringPanel;
     private javax.swing.JTextField freqCutoffField;
     private javax.swing.JRadioButton freqFilterBut;
@@ -326,6 +576,7 @@ private void selectAllButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JSlider minMatchSlider;
@@ -337,11 +588,11 @@ private void selectAllButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     // End of variables declaration//GEN-END:variables
 
     public ArrayList<String> getSelectedInfo() {
-        return selectedInfo;
+        return selectedCols;
     }
 
     public ArrayList<Boolean> getSelectedCols() {
-        return selectedCols;
+        return filterTable;
     }
 
     private void setOldSelectedCols(ArrayList<Boolean> oldSelectecCols) {
@@ -352,6 +603,9 @@ private void selectAllButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
                     ((FilterTableModel) vcfTable.getModel()).setSelected(i, 2);
                 }
             }
+            
+            // TODO: set the consequence columns
+            
         }
     }
 
@@ -394,4 +648,5 @@ private void selectAllButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     String getFreqFile() {
         return freqFile;
     }
+
 }
