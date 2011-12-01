@@ -22,16 +22,14 @@ class VariantEffect {
     }
 
     VariantEffect(String string) {
-
         String effectVals[] = string.split(":");
         setFeature(effectVals[0]);
         setGene(effectVals[1]);
         setConsequence(effectVals[2]);
-
+              
         for (int i = 3; i < effectVals.length; i++) {
             String effect = effectVals[i];
-            Pattern pattern = Pattern.compile("(\\w+),(\\w+)\\((\\d+.*\\d*)\\)");
-            Matcher matcher = pattern.matcher(effect);
+            Matcher matcher = Olorin.variantEffectPattern.matcher(effect);
 
             if (matcher.find()) {
                 String name = matcher.group(1);
