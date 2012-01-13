@@ -58,7 +58,7 @@ class VariantEffect {
         if (aaChange != null) {
             return aaChange;
         } else {
-            return ".";
+            return null;
         }
     }
 
@@ -70,7 +70,7 @@ class VariantEffect {
         if (condel != null) {
             return condel;
         } else {
-            return ".";
+            return null;
         }
     }
 
@@ -82,7 +82,7 @@ class VariantEffect {
         if (condelScore != null) {
             return condelScore;
         } else {
-            return ".";
+            return null;
         }
     }
 
@@ -94,7 +94,7 @@ class VariantEffect {
         if (consequence != null) {
             return consequence;
         } else {
-            return ".";
+            return null;
         }
     }
 
@@ -106,7 +106,7 @@ class VariantEffect {
         if (feature != null) {
             return feature;
         } else {
-            return ".";
+            return null;
         }
     }
 
@@ -118,7 +118,7 @@ class VariantEffect {
         if (gene != null) {
             return gene;
         } else {
-            return ".";
+            return null;
         }
     }
 
@@ -130,7 +130,7 @@ class VariantEffect {
         if (granthamScore != null) {
             return granthamScore;
         } else {
-            return ".";
+            return null;
         }
     }
 
@@ -142,7 +142,7 @@ class VariantEffect {
         if (polyphen != null) {
             return polyphen;
         } else {
-            return ".";
+            return null;
         }
     }
 
@@ -154,7 +154,7 @@ class VariantEffect {
         if (polyphenScore != null) {
             return polyphenScore;
         } else {
-            return ".";
+            return null;
         }
     }
 
@@ -166,7 +166,7 @@ class VariantEffect {
         if (sift != null) {
             return sift;
         } else {
-            return ".";
+            return null;
         }
     }
 
@@ -178,7 +178,7 @@ class VariantEffect {
         if (siftScore != null) {
             return siftScore;
         } else {
-            return ".";
+            return null;
         }
     }
 
@@ -186,18 +186,46 @@ class VariantEffect {
         this.siftScore = siftScore;
     }
 
-    ArrayList getValues() {
+    ArrayList getValues(ArrayList<String> selectedCols) {
         ArrayList tableValues = new ArrayList();
-        tableValues.add(this.getGene());
-        tableValues.add(this.getConsequence());
-        tableValues.add(this.getAaChange());
-        tableValues.add(this.getCondel());
-        tableValues.add(this.getCondelScore());
-        tableValues.add(this.getSift());
-        tableValues.add(this.getSiftScore());
-        tableValues.add(this.getPolyphen());
-        tableValues.add(this.getPolyphenScore());
-        tableValues.add(this.getGranthamScore());
+        for (String col : selectedCols) {
+            if (col.startsWith("CSQ")) {
+                if (col.matches("CSQ Gene")) {
+                    tableValues.add(this.getGene());
+                }
+                if (col.matches("CSQ Feature")) {
+                    tableValues.add(this.getFeature());
+                }
+                if (col.matches("CSQ Consequence")) {
+                    tableValues.add(this.getConsequence());
+                }
+                if (col.matches("CSQ Amino Acid Change")) {
+                    tableValues.add(this.getAaChange());
+                }
+                if (col.matches("CSQ Sift Prediction")) {
+                    tableValues.add(this.getSift());
+                }
+                if (col.matches("CSQ Sift Score")) {
+                    tableValues.add(this.getSiftScore());
+                }
+                if (col.matches("CSQ PolyPhen Prediction")) {
+                    tableValues.add(this.getPolyphen());
+                }
+                if (col.matches("CSQ PolyPhen Score")) {
+                    tableValues.add(this.getPolyphenScore());
+                }
+                if (col.matches("CSQ Condel Prediction")) {
+                    tableValues.add(this.getCondel());
+                }
+                if (col.matches("CSQ Condel Score")) {
+                    tableValues.add(this.getCondelScore());
+                }
+                if (col.matches("CSQ Grantham Score")) {
+                    tableValues.add(this.getGranthamScore());
+                }
+
+            }
+        }        
         return tableValues;
     }
 
