@@ -21,6 +21,7 @@ class NumericMatcherEditor extends AbstractMatcherEditor implements ActionListen
     private int i;
     private JPanel widget;
     private ArrayList<String> selectedCols;
+    private Boolean doubleSlider;
 
     NumericMatcherEditor(String id, int i) {
         this.id = id;
@@ -29,7 +30,7 @@ class NumericMatcherEditor extends AbstractMatcherEditor implements ActionListen
 
         widget.add(new JLabel(id + ":"));
 
-        this.signChooser = new JComboBox(new Object[]{">", "<"});
+        this.signChooser = new JComboBox(new Object[]{">", ">=", "<", "<="});
         this.signChooser.addActionListener(this);
         widget.add(signChooser);
 
@@ -43,10 +44,11 @@ class NumericMatcherEditor extends AbstractMatcherEditor implements ActionListen
         this.id = id;
         this.i = i;
         this.widget = new JPanel();
-
+        this.doubleSlider = false;
+        
         widget.add(new JLabel(id + ":"));
 
-        this.signChooser = new JComboBox(new Object[]{">", "<"});
+        this.signChooser = new JComboBox(new Object[]{">", ">=", "<", "<="});
         this.signChooser.addActionListener(this);
         widget.add(signChooser);
 
@@ -55,9 +57,17 @@ class NumericMatcherEditor extends AbstractMatcherEditor implements ActionListen
         this.valueField.addActionListener(this);
         widget.add(valueField);
 
-        this.slider = new JSlider(min.intValue(), max.intValue());
-        this.slider.setPaintLabels(true);
-        this.slider.addChangeListener(this);
+        // special case for 0 - 1 values        
+        if (min >= 0 && max <= 1) {            
+            this.doubleSlider = true;
+            this.slider = new JSlider(0, 10);
+            this.slider.setPaintLabels(true);
+            this.slider.addChangeListener(this);
+        } else {
+            this.slider = new JSlider(min.intValue(), max.intValue());
+            this.slider.setPaintLabels(true);
+            this.slider.addChangeListener(this);
+        }
         widget.add(slider);
     }
 
@@ -78,7 +88,13 @@ class NumericMatcherEditor extends AbstractMatcherEditor implements ActionListen
 
     @Override
     public void stateChanged(ChangeEvent ce) {
-        this.valueField.setText(Integer.toString(this.slider.getValue()));
+        if (doubleSlider) {
+            double sliderValue = (double) this.slider.getValue();            
+            this.valueField.setText(Double.toString(sliderValue/10d));
+        } else {
+            this.valueField.setText(Integer.toString(this.slider.getValue()));
+        }
+        
         final String sign = (String) this.signChooser.getSelectedItem();
         final String cutoff = (String) this.valueField.getText();
 
@@ -87,6 +103,30 @@ class NumericMatcherEditor extends AbstractMatcherEditor implements ActionListen
         } else {
             this.fireChanged(new NumericMatcher(i, sign, cutoff));
         }
+    }
+
+    String getSign() {
+        return (String) this.signChooser.getSelectedItem();
+    }
+
+    public void setSignChooser(String sign) {
+        this.signChooser.setSelectedItem(sign);
+    }
+
+    public void setValueField(String value) {
+        this.valueField.setText(value);
+    }
+
+    String getCutoff() {
+        return this.valueField.getText();
+    }
+
+    String getID() {
+        return id;
+    }
+
+    void setSlider(String value) {
+        this.slider.setValue(Integer.parseInt(value));
     }
 
     private static class NumericMatcher implements Matcher {
@@ -105,7 +145,7 @@ class NumericMatcherEditor extends AbstractMatcherEditor implements ActionListen
         public boolean matches(Object item) {
             final Variant variant = (Variant) item;
             String value = (String) variant.getTableArray().get(i);
-            if (!value.matches(".")) {
+            if (value != null) {
                 if (sign.matches("<")) {
                     if (Double.parseDouble(value) < Double.parseDouble(cutoff)) {
                         return true;
@@ -118,11 +158,25 @@ class NumericMatcherEditor extends AbstractMatcherEditor implements ActionListen
                     } else {
                         return false;
                     }
+                } else if (sign.matches(">=")) {
+                    if (Double.parseDouble(value) >= Double.parseDouble(cutoff)) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else if (sign.matches("<=")) {
+                    if (Double.parseDouble(value) <= Double.parseDouble(cutoff)) {
+                        return true;
+                    } else {
+                        return false;
+                    }
                 } else {
                     return false;
                 }
             } else {
-                return false;
+                // if value is missing keep in the sorted list 
+                // should this only be true for frequency values?                
+                return true;
             }
         }
     }
