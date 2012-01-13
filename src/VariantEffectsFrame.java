@@ -20,10 +20,12 @@ import javax.swing.WindowConstants;
 public class VariantEffectsFrame extends javax.swing.JFrame {
 
     private final ArrayList<VariantEffect> effects;
+    private ArrayList<String> selectedCols;
 
     /** Creates new form VariantEffectsFrame */
-    public VariantEffectsFrame(ArrayList<VariantEffect> effects) {
+    public VariantEffectsFrame(ArrayList<VariantEffect> effects, ArrayList<String> selectedCols) {
         this.effects = effects;
+        this.selectedCols = selectedCols;
         initComponents();
     }
 
@@ -42,7 +44,7 @@ public class VariantEffectsFrame extends javax.swing.JFrame {
 
         effectsPane = new javax.swing.JScrollPane();
         javax.swing.JTable effectsTable = new javax.swing.JTable();
-        effectsTable.setModel(new VariantEffectTableModel(effects));
+        effectsTable.setModel(new VariantEffectTableModel(effects, selectedCols));
         effectsPane.setViewportView(effectsTable);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -95,7 +97,7 @@ public class VariantEffectsFrame extends javax.swing.JFrame {
 
             @Override
             public void run() {
-                VariantEffectsFrame vef = new VariantEffectsFrame(effects);
+                VariantEffectsFrame vef = new VariantEffectsFrame(effects, selectedCols);
             }
         });
     }

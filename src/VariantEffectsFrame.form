@@ -67,7 +67,7 @@
             </Property>
           </Properties>
           <AuxValues>
-            <AuxValue name="JavaCodeGenerator_DeclarationPost" type="java.lang.String" value="effectsTable.setModel(new VariantEffectTableModel(effects));&#xa;effectsPane.setViewportView(effectsTable);"/>
+            <AuxValue name="JavaCodeGenerator_DeclarationPost" type="java.lang.String" value="effectsTable.setModel(new VariantEffectTableModel(effects, selectedCols));&#xa;effectsPane.setViewportView(effectsTable);"/>
             <AuxValue name="JavaCodeGenerator_VariableLocal" type="java.lang.Boolean" value="true"/>
             <AuxValue name="JavaCodeGenerator_VariableModifier" type="java.lang.Integer" value="0"/>
           </AuxValues>
