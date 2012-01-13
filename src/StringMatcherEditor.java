@@ -10,11 +10,12 @@ class StringMatcherEditor {
 
     private JPanel widget;
     private TextComponentMatcherEditor tme;
+    private JTextField filterField;
 
     public StringMatcherEditor(String id, final int i) {
         widget = new JPanel();
         widget.add(new JLabel(id + ":"));
-        JTextField filterField = new JTextField(5);
+        filterField = new JTextField(5);
         widget.add(filterField);
         TextFilterator idFilterator = new TextFilterator() {
 
@@ -34,4 +35,9 @@ class StringMatcherEditor {
     public TextComponentMatcherEditor getTextComponentMatcherEditor() {
         return tme;
     }
+
+    void setText(String text) {
+        this.filterField.setText(text);
+    }
+
 }
