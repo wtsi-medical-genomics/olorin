@@ -55,10 +55,10 @@ class FlagMatcherEditor extends AbstractMatcherEditor implements ActionListener 
         public boolean matches(Object item) {
             final Variant variant = (Variant) item;
             String value = (String) variant.getTableArray().get(i);
-            if (value.matches(".")) {
-                return false;
-            } else {
+            if (value.matches("TRUE")) {
                 return true;
+            } else {
+                return false;
             }
         }
     }
