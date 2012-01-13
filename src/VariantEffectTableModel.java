@@ -5,25 +5,56 @@ import javax.swing.table.AbstractTableModel;
 public class VariantEffectTableModel extends AbstractTableModel {
 
     ArrayList<VariantEffect> variantEffects;
-    private ArrayList<String> columns;
+    ArrayList<String> selectedCols;
+    ArrayList<String> columns;
 
-    public VariantEffectTableModel(ArrayList<VariantEffect> variantEffects) {
+    public VariantEffectTableModel(ArrayList<VariantEffect> variantEffects, ArrayList<String> selectedCols) {
         this.variantEffects = variantEffects;
+        this.selectedCols = selectedCols;
         makeCols();
     }
 
     public void makeCols() {
         columns = new ArrayList<String>();
-        columns.add("Gene");
-        columns.add("Consequence");
-        columns.add("Amino acid change");
-        columns.add("Condel prediction");
-        columns.add("Condel score");
-        columns.add("SIFT prediction");
-        columns.add("SIFT score");
-        columns.add("PloyPhen prediction");
-        columns.add("PolyPhen score");
-        columns.add("Grantham score");
+
+        for (String col : selectedCols) {
+            if (col.startsWith("CSQ")) {
+                if (col.matches("CSQ Gene")) {
+                    columns.add("Gene");
+                }
+                if (col.matches("CSQ Feature")) {
+                    columns.add("Feature");
+                }
+                if (col.matches("CSQ Consequence")) {
+                    columns.add("Consequence");
+                }
+                if (col.matches("CSQ Amino Acid Change")) {
+                    columns.add("Amino acid change");
+                }
+                if (col.matches("CSQ Sift Prediction")) {
+                    columns.add("SIFT prediction");
+                }
+                if (col.matches("CSQ Sift Score")) {
+                    columns.add("SIFT score");
+                }
+                if (col.matches("CSQ PolyPhen Prediction")) {
+                    columns.add("PloyPhen prediction");
+                }
+                if (col.matches("CSQ PolyPhen Score")) {
+                    columns.add("PolyPhen score");
+                }
+                if (col.matches("CSQ Condel Prediction")) {
+                    columns.add("Condel prediction");
+                }
+                if (col.matches("CSQ Condel Score")) {
+                    columns.add("Condel score");
+                }
+                if (col.matches("CSQ Grantham Score")) {
+                    columns.add("Grantham score");
+                }
+
+            }
+        }
     }
 
     @Override
@@ -43,11 +74,17 @@ public class VariantEffectTableModel extends AbstractTableModel {
 
     @Override
     public Object getValueAt(int row, int col) {
-        return variantEffects.get(row).getValues().get(col);
+        return variantEffects.get(row).getValues(selectedCols).get(col);
     }
 
     @Override
     public Class getColumnClass(int c) {
-        return getValueAt(0, c).getClass();
+        
+        if (getValueAt(0, c) != null) {
+            return getValueAt(0, c).getClass();
+        } else {
+            // no values for this column so just return a string class
+            return new String().getClass();
+        }
     }
 }
