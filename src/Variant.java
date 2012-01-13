@@ -4,27 +4,36 @@ import java.util.HashMap;
 
 public class Variant {
 
-    public ArrayList<Integer> genotypes;
     public ArrayList tableArray;
-    public ArrayList<VariantEffect> variantEffects;
-    private Double freq;
+    public ArrayList<Integer> genotypes;
+    private String csqString;
     private boolean freqFiltered;
+    private Double freq;
 
     public Variant() {
     }
 
     public Variant(String vcfLine, ArrayList<String> selectedCols, ArrayList<Integer> selectedInds) {
-        
-        tableArray =  new ArrayList();
-        
+
+        tableArray = new ArrayList();
         String values[] = vcfLine.split("\t");
         String chr_s = values[0];
         String pos_s = values[1];
+        String id = new String(values[2]);
+        String ref = new String(values[3]);
+        String alt = new String(values[4]);
+        String filter = new String(values[5]);
+        String quality = new String(values[6]);
+
+        // convert the chromosome and position into ints
         int chr_i = 0;
         int pos_i = 0;
-        
-        // catch if the chromosome is in the format chr1 chr2 ...
-        
+
+        // remove chr string from the chomosome number if included
+        if (chr_s.startsWith("chr") || chr_s.startsWith("CHR")) {
+            chr_s = chr_s.substring(3);
+        }
+
         try {
             chr_i = Integer.parseInt(chr_s);
         } catch (NumberFormatException nfe) {
@@ -45,29 +54,31 @@ public class Variant {
             System.out.println("position is not a number '" + pos_s + "'");
         }
 
+        // Add the default columns
         tableArray.add(chr_i);
         tableArray.add(pos_i);
-        tableArray.add(values[2]);
-        tableArray.add(values[3]);
-        tableArray.add(values[4]);
-        tableArray.add(values[5]);
-        tableArray.add(values[6]);
-        
-        variantEffects = new ArrayList<VariantEffect>();
-        
+        tableArray.add(id);
+        tableArray.add(ref);
+        tableArray.add(alt);
+        tableArray.add(filter);
+        tableArray.add(quality);
+
+        ArrayList<VariantEffect> variantEffects = new ArrayList<VariantEffect>();
+
         HashMap info = new HashMap();
-        
+
         String infoVals[] = values[7].split(";");
-        
+
         for (int i = 0; i < infoVals.length; i++) {
             if (infoVals[i].contains("=")) {
                 String[] keyValuePairs = infoVals[i].split("=");
-                if (keyValuePairs[0].matches("CSQ")) {                    
+                if (keyValuePairs[0].matches("CSQ")) {
+                    this.csqString = new String(keyValuePairs[1]);
                     String[] csqVals = keyValuePairs[1].split("\\+");
                     for (int j = 0; j < csqVals.length; j++) {
-                        if (csqVals[j].startsWith("GERP")) {                            
+                        if (csqVals[j].startsWith("GERP")) {
                             String[] gerp = csqVals[j].split(",");
-                            info.put(gerp[0], gerp[1]);
+                            info.put("CSQ Gerp Score", gerp[1]);
                         } else {
                             variantEffects.add(new VariantEffect(csqVals[j]));
                         }
@@ -79,56 +90,60 @@ public class Variant {
                 info.put(infoVals[i], "TRUE");
             }
         }
-        
+
+        VariantEffect ve = this.getMostDamagingEffect(variantEffects);
+
+        info.put("CSQ Gene", ve.getGene());
+        info.put("CSQ Feature", ve.getFeature());
+        info.put("CSQ Consequence", ve.getConsequence());
+        info.put("CSQ Amino Acid Change", ve.getAaChange());
+        info.put("CSQ Sift Prediction", ve.getSift());
+        info.put("CSQ Sift Score", ve.getSiftScore());
+        info.put("CSQ PolyPhen Prediction", ve.getPolyphen());
+        info.put("CSQ PolyPhen Score", ve.getPolyphenScore());
+        info.put("CSQ Condel Prediction", ve.getCondel());
+        info.put("CSQ Condel Score", ve.getCondelScore());
+        info.put("CSQ Grantham Score", ve.getGranthamScore());
+
+
         genotypes = new ArrayList<Integer>();
-        ArrayList genotypeStrings = new ArrayList<String>();
+        ArrayList<String> genotypeStrings = new ArrayList<String>();
         for (int i = 9; i < values.length; i++) {
             genotypes.add(parseGenotypes(values[i]));
             genotypeStrings.add(parseGenotypeString(values[i]));
         }
-        
+
         for (Integer indIndex : selectedInds) {
-            tableArray.add(genotypeStrings.get(indIndex));
+            String genotype = genotypeStrings.get(indIndex);
+            tableArray.add(new String(genotype));
         }
-        
-        VariantEffect ve = this.getMostDamagingEffect();
-        
-        info.put("gene", ve.getGene());
-        info.put("feature", ve.getFeature());
-        info.put("csq", ve.getConsequence());
-        info.put("aa", ve.getAaChange());
-        info.put("sift", new String[] {ve.getSift(), ve.getSiftScore()});
-        info.put("poly", new String[] {ve.getPolyphen(), ve.getPolyphenScore()});
-        info.put("condel", new String[] {ve.getCondel(), ve.getCondelScore()});
-        info.put("grantham", ve.getGranthamScore());
-        
+
         for (String col : selectedCols) {
             tableArray.add(info.get(col));
         }
-        
+
         // the number of additional effects the variant has
-        tableArray.add(Integer.toString(variantEffects.size()));
-        
+        tableArray.add(variantEffects.size());
+
     }
 
     private int parseGenotypes(String s) {
         String genoVals[] = s.split(":");
         //TODO record all the other vaues along with the genotype
         String alleles[] = genoVals[0].split("[\\|\\/\\\\]");
-
         if (alleles.length > 1) {
             String a = alleles[0];
             String b = alleles[1];
             if (a.equals(b)) {
-                if (a.matches("0") || a.matches(".")) {
-                    // homo ref
+                if (a.matches("0") || a.matches("\\.")) {
+                    // homo ref                    
                     return 0;
                 } else {
-                    // homo alt
+                    // homo alt                                                            
                     return 2;
                 }
             } else {
-                // het
+                // het                
                 return 1;
             }
         } else {
@@ -140,7 +155,7 @@ public class Variant {
     private String parseGenotypeString(String s) {
         String genoVals[] = s.split(":");
         //TODO record all the other vaues along with the genotype
-                
+
         if (genoVals[0].matches("/.[\\|\\/\\\\]./") || genoVals[0].matches(".")) {
             // missing genotype return as hom ref
             return (String) this.tableArray.get(3) + " " + (String) this.tableArray.get(3);
@@ -158,7 +173,7 @@ public class Variant {
                 // get the alt allele
                 a = ((String) this.tableArray.get(4)).split(",")[Integer.parseInt(a) - 1];
             }
-             if (b.matches("0")) {
+            if (b.matches("0")) {
                 // get the ref allele
                 b = (String) this.tableArray.get(3);
             } else if (b.matches("\\.")) {
@@ -173,7 +188,7 @@ public class Variant {
     }
 
     public ArrayList getTableArray() {
-            return tableArray;
+        return tableArray;
     }
 
     public ArrayList<Integer> getGenotypes() {
@@ -197,7 +212,7 @@ public class Variant {
         return freq;
     }
 
-    private VariantEffect getMostDamagingEffect() {
+    private VariantEffect getMostDamagingEffect(ArrayList<VariantEffect> variantEffects) {
         if (variantEffects.size() > 1) {
 
             VariantEffect mostDamaging = new VariantEffect();
@@ -249,6 +264,13 @@ public class Variant {
     }
 
     ArrayList<VariantEffect> getVariantEffects() {
-        return variantEffects;
+        ArrayList<VariantEffect> effects = new ArrayList<VariantEffect>();
+        String[] csqVals = csqString.split("\\+");
+        for (int i = 0; i < csqVals.length; i++) {
+            if (!csqVals[i].startsWith("GERP")) {                
+                effects.add(new VariantEffect(csqVals[i]));
+            }
+        }
+        return effects;
     }
 }
