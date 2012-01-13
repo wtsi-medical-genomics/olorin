@@ -3,6 +3,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import javax.swing.JPanel;
+import javax.swing.ProgressMonitor;
 
 public class VCF {
 
@@ -34,7 +36,7 @@ public class VCF {
         }
     }
 
-    public ArrayList<Variant> getVariants(ArrayList<SegmentMatch> matches, int matchNum, ArrayList<String> selectedCols, String filteringMode, ArrayList<String> indIds) throws IOException {
+    public ArrayList<Variant> getVariants(ArrayList<SegmentMatch> matches, int matchNum, ArrayList<String> selectedCols, String filteringMode, ArrayList<String> indIds, JPanel contentPanel) throws IOException {
 
         // convert the ind id into a column index in the file
         ArrayList<Integer> indIndexes = new ArrayList<Integer>();
@@ -42,21 +44,29 @@ public class VCF {
             indIndexes.add(meta.sampleHash.get(id));
         }
 
+        int segmentCount = 0;
+
+        for (SegmentMatch m : matches) {
+            if (m.getIds().size() >= matchNum) {
+                segmentCount++;
+            }
+        }
+        
         ArrayList<Variant> variants = new ArrayList<Variant>();
 
+        int segmentProgress = 0;
         for (SegmentMatch m : matches) {
 
             if (m.getIds().size() >= matchNum) {
                 if (tabixVCF.query(m.getChr() + ":" + m.getStart() + "-" + m.getEnd()) != null) {
                     TabixReader.Iterator i = tabixVCF.query(m.getChr() + ":" + m.getStart() + "-" + m.getEnd());
-                    if (i.next() != null) {
                         String vcfLine = i.next();
                         while (vcfLine != null) {
                             Variant v = new Variant(vcfLine, selectedCols, indIndexes);
-                            if (filteringMode.matches("any")) {
+                            if (filteringMode.matches("any")) {                    
                                 int altCount = 0;
                                 for (Integer geno : v.getGenotypes()) {
-                                    altCount += geno;
+                                    altCount += geno;                                    
                                 }
 
                                 if (altCount >= 1) {
@@ -64,7 +74,7 @@ public class VCF {
                                 }
                             } else if (filteringMode.matches("selected")) {
                                 int altCount = 0;
-                                for (Integer geno : v.getGenotypes()) {
+                                for (Integer geno : v.getGenotypes(indIndexes)) {
                                     if (geno >= 1) {
                                         altCount++;
                                     }
@@ -89,8 +99,8 @@ public class VCF {
                             }
                             vcfLine = i.next();
                         }
-                    }
                 }
+                segmentProgress++;              
             }
         }
         return variants;
@@ -121,11 +131,11 @@ public class VCF {
                             Variant v = new Variant(vcfLine, selectedCols, indIndexes);
 
                             Double freq = getFreq(v);
-                            
+
                             if (freq < getFreqCutoff()) {
-                                
+
                                 v.setFreq(freq);
-                                
+
                                 if (filteringMode.matches("any")) {
                                     int altCount = 0;
                                     for (Integer geno : v.getGenotypes()) {
@@ -174,7 +184,7 @@ public class VCF {
 
         // check if it exists in the freq file
         // if it does is it below the frequency cutoff?
-        TabixReader.Iterator f = getFreqFile().query(v.getChr() + ":" + v.getPos() + "-" + v.getPos());
+        TabixReader.Iterator f = getFreqFile().query(v.getTableArray().get(0) + ":" + v.getTableArray().get(1) + "-" + v.getTableArray().get(1));
         if (f != null) {
             String freqLine = f.next();
             if (freqLine != null) {
