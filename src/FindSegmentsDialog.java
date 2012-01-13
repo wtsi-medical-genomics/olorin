@@ -38,7 +38,7 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
         initComponents();
     }
 
-    FindSegmentsDialog(int s, VCFMeta m, ArrayList<Boolean> oldSelectedCols, Boolean b) {
+    FindSegmentsDialog(int s, VCFMeta m, ArrayList<String> oldSelectedCols, Boolean b) {
         meta = m;
         selected = s;
         setMinMatches(selected);
@@ -378,31 +378,34 @@ private void okButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:e
 
     if (csq) {
         if (this.csqGeneCB.isSelected()) {
-            selectedCols.add("gene");
+            selectedCols.add("CSQ Gene");
         }
         if (this.csqFeatureCB.isSelected()) {
-            selectedCols.add("feature");
+            selectedCols.add("CSQ Feature");
         }
         if (this.csqCsqCB.isSelected()) {
-            selectedCols.add("csq");
+            selectedCols.add("CSQ Consequence");
         }
         if (this.csqAACB.isSelected()) {
-            selectedCols.add("aa");
+            selectedCols.add("CSQ Amino Acid Change");
         }
         if (this.csqSiftCB.isSelected()) {
-            selectedCols.add("sift");
+            selectedCols.add("CSQ Sift Prediction");
+            selectedCols.add("CSQ Sift Score");
         }
         if (this.csqPolyPhenCB.isSelected()) {
-            selectedCols.add("poly");
+            selectedCols.add("CSQ PolyPhen Prediction");
+            selectedCols.add("CSQ PolyPhen Score");
         }
         if (this.csqCondelCB.isSelected()) {
-            selectedCols.add("condel");
+            selectedCols.add("CSQ Condel Prediction");
+            selectedCols.add("CSQ Condel Score");
         }
         if (this.csqGranthamCB.isSelected()) {
-            selectedCols.add("grantham");
+            selectedCols.add("CSQ Grantham Score");
         }
         if (this.csqGerpCB.isSelected()) {
-            selectedCols.add("gerp");
+            selectedCols.add("CSQ Gerp Score");
         }
     }
 
@@ -587,25 +590,51 @@ private void selectAllButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     private javax.swing.JTable vcfTable;
     // End of variables declaration//GEN-END:variables
 
-    public ArrayList<String> getSelectedInfo() {
+    public ArrayList<String> getSelectedCols() {
         return selectedCols;
     }
 
-    public ArrayList<Boolean> getSelectedCols() {
-        return filterTable;
-    }
-
-    private void setOldSelectedCols(ArrayList<Boolean> oldSelectecCols) {
+    private void setOldSelectedCols(ArrayList<String> oldSelectecCols) {
         if (oldSelectecCols.size() > 0) {
             int rowCount = ((FilterTableModel) vcfTable.getModel()).getRowCount();
-            for (int i = 0; i < rowCount; i++) {
-                if (oldSelectecCols.get(i)) {
-                    ((FilterTableModel) vcfTable.getModel()).setSelected(i, 2);
+            for (String col : oldSelectecCols) {                
+                if (col.startsWith("CSQ")) {
+                    if (col.matches("CSQ Gene")) {
+                        this.csqGeneCB.setSelected(true);
+                    }
+                    if (col.matches("CSQ Feature")) {                        
+                        this.csqFeatureCB.setSelected(true);
+                    }
+                    if (col.matches("CSQ Consequence")) {                        
+                        this.csqCsqCB.setSelected(true);
+                    }
+                    if (col.matches("CSQ Amino Acid Change")) {                        
+                        this.csqAACB.setSelected(true);
+                    }
+                    if (col.matches("CSQ Sift Prediction") || col.matches("CSQ Sift Score")) {                        
+                        this.csqSiftCB.setSelected(true);
+                    }
+                    if (col.matches("CSQ PolyPhen Prediction") || col.matches("CSQ PolyPhen Score")) {                        
+                        this.csqPolyPhenCB.setSelected(true);
+                    }
+                    if (col.matches("CSQ Condel Prediction") || col.matches("CSQ Condel Score")) {
+                        this.csqCondelCB.setSelected(true);
+                    }
+                    if (col.matches("CSQ Grantham Score")) {                        
+                        this.csqGranthamCB.setSelected(true);
+                    }
+                    if (col.matches("CSQ Gerp Score")) {                        
+                        this.csqGerpCB.setSelected(true);
+                    }
+                } else {                    
+                    for (int i = 0; i < rowCount; i++) {                        
+                        String id = (String) ((FilterTableModel) vcfTable.getModel()).getValueAt(i, 0);
+                        if (id.equals(col)) {
+                            ((FilterTableModel) vcfTable.getModel()).setSelected(i, 2);                            
+                        }                                               
+                    }
                 }
             }
-            
-            // TODO: set the consequence columns
-            
         }
     }
 
@@ -648,5 +677,4 @@ private void selectAllButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     String getFreqFile() {
         return freqFile;
     }
-
 }
