@@ -5,7 +5,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-
 class StringMatcherEditor {
 
     private JPanel widget;
@@ -39,5 +38,4 @@ class StringMatcherEditor {
     void setText(String text) {
         this.filterField.setText(text);
     }
-
 }
