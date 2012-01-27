@@ -31,6 +31,19 @@ class FlagMatcherEditor extends AbstractMatcherEditor implements ActionListener 
         return widget;
     }
 
+    public String getID() {
+        return id;
+    }
+
+    public boolean isTicked() {
+        return flagBox.isSelected();
+    }
+
+    void setFlag(boolean ticked) {
+        flagBox.setSelected(ticked);
+        this.fireChanged(new FlagMatcher(i, ticked));
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         final Boolean flag = this.flagBox.isSelected();
@@ -55,8 +68,13 @@ class FlagMatcherEditor extends AbstractMatcherEditor implements ActionListener 
         public boolean matches(Object item) {
             final Variant variant = (Variant) item;
             String value = (String) variant.getTableArray().get(i);
-            if (value.matches("TRUE")) {
-                return true;
+
+            if (variant.getTableArray().get(i) != null) {
+                if (value.matches("TRUE")) {
+                    return true;
+                } else {
+                    return false;
+                }
             } else {
                 return false;
             }
