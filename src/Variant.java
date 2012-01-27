@@ -267,10 +267,38 @@ public class Variant {
         ArrayList<VariantEffect> effects = new ArrayList<VariantEffect>();
         String[] csqVals = csqString.split("\\+");
         for (int i = 0; i < csqVals.length; i++) {
-            if (!csqVals[i].startsWith("GERP")) {                
+            if (!csqVals[i].startsWith("GERP")) {
                 effects.add(new VariantEffect(csqVals[i]));
             }
         }
         return effects;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        }
+        if (o == this) {
+            return true;
+        }
+        if (this.getClass() != o.getClass()) {
+            return false;
+        }
+        Variant v = (Variant) o;
+        //...test other properties here...
+        
+        Integer chr = (Integer) this.getTableArray().get(0);
+        Integer pos = (Integer) this.getTableArray().get(1);
+        Integer oChr = (Integer) v.getTableArray().get(0);
+        Integer oPos = (Integer) v.getTableArray().get(1);
+        
+        if (chr.equals(oChr) && pos.equals(oPos)) {
+            return true;
+        } else {
+            return false;
+        }
+        
+        
     }
 }
