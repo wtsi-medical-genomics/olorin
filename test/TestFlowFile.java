@@ -1,8 +1,5 @@
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Iterator;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -14,15 +11,15 @@ public class TestFlowFile extends TestCase {
 	FlowFile flow;
 	
 	@Before public void setUp() throws Exception {
-		flow = new FlowFile("test_files/test.22.flow");
-		MapFile map = new MapFile("test_files/test.22.map");
+		flow = new FlowFile("/Users/jm20/work/workspace/Oberon_svn/test/test_files/test.22.flow", "22");
+		MapFile map = new MapFile("/Users/jm20/work/workspace/Oberon_svn/test/test_files/test.22.map", "22");
 		flow.setPos(map.getPositions());
 	}
 	
 	@Test public void testParseFlow() throws Exception {
 		
 		flow.parseFlow();
-		Hashtable<String, Chromosome> samples = flow.getSamples();
+		HashMap<String, Chromosome> samples = flow.getSamples();
 		
 		assertEquals(16, samples.size());
 		
@@ -103,5 +100,9 @@ public class TestFlowFile extends TestCase {
 		assertEquals(15437138, patStart2);
 		assertEquals(16317630, patEnd2);
 		assertEquals("G", new String(patCode2));
-	}	
+	}
+        
+        // test that the right exceptions are thrown with bad data
+        // eg vertical format data, empty file
+        
 }
