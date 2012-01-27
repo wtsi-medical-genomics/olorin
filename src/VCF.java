@@ -44,63 +44,74 @@ public class VCF {
             indIndexes.add(meta.sampleHash.get(id));
         }
 
-        int segmentCount = 0;
 
+        // check if the segment contains the sequenced inds
+        int segmentCount = 0;
         for (SegmentMatch m : matches) {
-            if (m.getIds().size() >= matchNum) {
+            ArrayList<Integer> segInds = new ArrayList(m.getIds());
+            segInds.retainAll(indIds);
+            if (m.getIds().size() >= matchNum && segInds.size() > 0) {
                 segmentCount++;
             }
         }
-        
+
         ArrayList<Variant> variants = new ArrayList<Variant>();
 
         int segmentProgress = 0;
         for (SegmentMatch m : matches) {
+            ArrayList<Integer> segInds = new ArrayList(m.getIds());
+            segInds.retainAll(indIds);
+            if (m.getIds().size() >= matchNum && segInds.size() > 0) {
 
-            if (m.getIds().size() >= matchNum) {
                 if (tabixVCF.query(m.getChr() + ":" + m.getStart() + "-" + m.getEnd()) != null) {
                     TabixReader.Iterator i = tabixVCF.query(m.getChr() + ":" + m.getStart() + "-" + m.getEnd());
-                        String vcfLine = i.next();
-                        while (vcfLine != null) {
-                            Variant v = new Variant(vcfLine, selectedCols, indIndexes);
-                            if (filteringMode.matches("any")) {                    
-                                int altCount = 0;
-                                for (Integer geno : v.getGenotypes()) {
-                                    altCount += geno;                                    
-                                }
-
-                                if (altCount >= 1) {
-                                    variants.add(v);
-                                }
-                            } else if (filteringMode.matches("selected")) {
-                                int altCount = 0;
-                                for (Integer geno : v.getGenotypes(indIndexes)) {
-                                    if (geno >= 1) {
-                                        altCount++;
-                                    }
-                                }
-
-                                if (altCount == indIndexes.size()) {
-                                    variants.add(v);
-                                }
-                            } else if (filteringMode.matches("all")) {
-                                int altCount = 0;
-                                for (Integer geno : v.getGenotypes()) {
-                                    if (geno >= 1) {
-                                        altCount++;
-                                    }
-                                }
-
-                                if (altCount == meta.getSampleHash().size()) {
-                                    variants.add(v);
-                                }
-                            } else {
-                                // invalid filtering mode
+                    String vcfLine = i.next();
+                    while (vcfLine != null) {
+                        Variant v = new Variant(vcfLine, selectedCols, indIndexes);
+                        if (filteringMode.matches("any")) {
+                            int altCount = 0;
+                            for (Integer geno : v.getGenotypes()) {
+                                altCount += geno;
                             }
-                            vcfLine = i.next();
+
+                            if (altCount >= 1) {
+                                if (!variants.contains(v)) {
+                                    variants.add(v);
+                                }
+                            }
+                        } else if (filteringMode.matches("selected")) {
+                            int altCount = 0;
+                            for (Integer geno : v.getGenotypes(indIndexes)) {
+                                if (geno >= 1) {
+                                    altCount++;
+                                }
+                            }
+
+                            if (altCount == indIndexes.size()) {
+                                if (!variants.contains(v)) {
+                                    variants.add(v);
+                                }
+                            }
+                        } else if (filteringMode.matches("all")) {
+                            int altCount = 0;
+                            for (Integer geno : v.getGenotypes()) {
+                                if (geno >= 1) {
+                                    altCount++;
+                                }
+                            }
+
+                            if (altCount == meta.getSampleHash().size()) {
+                                if (!variants.contains(v)) {
+                                    variants.add(v);
+                                }
+                            }
+                        } else {
+                            // invalid filtering mode
                         }
+                        vcfLine = i.next();
+                    }
                 }
-                segmentProgress++;              
+                segmentProgress++;
             }
         }
         return variants;
