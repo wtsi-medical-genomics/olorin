@@ -38,11 +38,11 @@ public class DataDirectory {
 
         samples = new HashMap<String, Sample>();
 
-        for (String chrom : knownChroms.keySet()) {
-            String flowName = fileName + "." + chrom + ".flow";
-            FlowFile flow = new FlowFile(directory.getAbsolutePath() + File.separator + flowName);
+        for (String chrom : knownChroms.keySet()) {            
+            String flowName = fileName + "." + chrom + ".flow";            
+            FlowFile flow = new FlowFile(directory.getAbsolutePath() + File.separator + flowName, chrom);
             String mapName = fileName + "." + chrom + ".map";
-            MapFile map = new MapFile(directory.getAbsolutePath() + File.separator + mapName);
+            MapFile map = new MapFile(directory.getAbsolutePath() + File.separator + mapName, chrom);
             flow.setPos(map.getPositions());
             flow.parseFlow();
             HashMap<String, Chromosome> h = flow.getSamples();
@@ -82,8 +82,7 @@ public class DataDirectory {
     }
 
     public void printLog(String text) {
-        Olorin.logPanel.append(text + "\n");
-        Olorin.logPanel.repaint();
+        //TODO: in verbose mode write to an output file
     }
 
     ArrayList getSequencedInds() {
