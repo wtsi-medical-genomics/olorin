@@ -1,5 +1,8 @@
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.StringTokenizer;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,11 +25,12 @@ class VariantEffect {
     }
 
     VariantEffect(String string) {
-        String effectVals[] = string.split(":");
+        String effectVals[] = null;
+        effectVals = string.split(":");
         setFeature(effectVals[0]);
         setGene(effectVals[1]);
         setConsequence(effectVals[2]);
-              
+
         for (int i = 3; i < effectVals.length; i++) {
             String effect = effectVals[i];
             Matcher matcher = Olorin.variantEffectPattern.matcher(effect);
@@ -50,6 +54,50 @@ class VariantEffect {
                 setAaChange(effect);
             } else if (effect.startsWith("Grantham")) {
                 setGranthamScore(effect.split(",")[1]);
+            }
+        }
+    }
+
+    // constructor for VEP format variant effect objects
+    VariantEffect(String string, HashMap<String, Integer> csqIndex) {
+
+        Vector<String> effectVals = missingSplit(string, "|");
+
+        if (csqIndex.containsKey("Gene")) {
+            setGene(effectVals.get(csqIndex.get("Gene")));
+        }
+        if (csqIndex.containsKey("Feature")) {
+            setFeature(effectVals.get(csqIndex.get("Feature")));
+        }
+        if (csqIndex.containsKey("Consequence")) {
+            setConsequence(effectVals.get(csqIndex.get("Consequence")));
+        }
+        if (csqIndex.containsKey("Amino_acids")) {
+            setAaChange(effectVals.get(csqIndex.get("Amino_acids")));
+        }
+        if (csqIndex.containsKey("SIFT")) {
+            // assume SIFT has been run with the both command for prediction and score
+            if (!effectVals.get(csqIndex.get("SIFT")).isEmpty()) {
+                String[] vals = effectVals.get(csqIndex.get("SIFT")).split("[\\(\\)]");
+                setSift(vals[0]);
+                setSiftScore(vals[1]);
+            }
+        }
+
+        if (csqIndex.containsKey("PolyPhen")) {
+            // assume PolyPhen has been run with the both command for prediction and score
+            if (!effectVals.get(csqIndex.get("PolyPhen")).isEmpty())  {
+                String[] vals = effectVals.get(csqIndex.get("PolyPhen")).split("[\\(\\)]");
+                setPolyphen(vals[0]);
+                setPolyphenScore(vals[1]);
+            }
+        }
+        if (csqIndex.containsKey("Condel")) {
+            // assume Condel has been run with the both command for prediction and score
+            if (!effectVals.get(csqIndex.get("Condel")).isEmpty())  {
+                String[] vals = effectVals.get(csqIndex.get("Condel")).split("[\\(\\)]");
+                setCondel(vals[0]);
+                setCondelScore(vals[1]);
             }
         }
     }
@@ -225,7 +273,7 @@ class VariantEffect {
                 }
 
             }
-        }        
+        }
         return tableValues;
     }
 
@@ -240,5 +288,37 @@ class VariantEffect {
         } catch (NumberFormatException e) {
             return 0;
         }
+    }
+
+    Vector<String> missingSplit(String input, String delimiter) {
+        boolean wasDelimiter = false;
+        String token = null;
+        Vector v = new Vector();
+        StringTokenizer st = new StringTokenizer(input, delimiter, true);
+        while (st.hasMoreTokens()) {
+            token = st.nextToken();
+            if (token.equals(delimiter)) {
+                if (wasDelimiter) {
+                    token = "";
+                } else {
+                    token = null;
+                }
+                wasDelimiter = true;
+            } else {
+                wasDelimiter = false;
+            }
+            if (token != null) {
+                v.addElement(token);
+            }
+        }
+        if (wasDelimiter) {
+            token = "";
+        } else {
+            token = null;
+        }
+        if (token != null) {
+            v.addElement(token);
+        }
+        return v;
     }
 }
