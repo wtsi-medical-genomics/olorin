@@ -21,7 +21,7 @@ public class SampleCompare {
 			ArrayList<Iterator> segArrays = new ArrayList<Iterator> ();
 			for (Sample s : samples){
 				//we might want to track that one of these is mat, one is pat, but right now I don't care
-				segArrays.add(s.getChr(chr).getMatHap().iterator());
+                            segArrays.add(s.getChr(chr).getMatHap().iterator());
 				segArrays.add(s.getChr(chr).getPatHap().iterator());
 			}
 			allMatches.addAll(compareChr(segArrays, chr));

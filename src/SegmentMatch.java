@@ -11,7 +11,7 @@ public class SegmentMatch<t> extends Segment implements Comparable<SegmentMatch>
 	public SegmentMatch(String c, int s, int e, byte[] bs, ArrayList<Integer> d) {
 		super(s, e, bs);
 		ids = d;
-		chr = c;
+		chr = c;           
 	}
 	
 	public ArrayList<Integer> getIds () {
