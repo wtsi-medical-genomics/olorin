@@ -12,6 +12,7 @@ import java.util.HashMap;
 public class TestVCF extends TestCase {
 
     private VCF vcf;
+    private VCF vepVcf;
     private Collection<SegmentMatch> matches;
     private ArrayList<String> selectedCols;
     private ArrayList<String> selectedInds;
