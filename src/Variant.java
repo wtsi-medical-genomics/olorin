@@ -13,6 +13,7 @@ public class Variant {
     public Variant() {
     }
 
+    // variant object with default UK10K consequence format
     public Variant(String vcfLine, ArrayList<String> selectedCols, ArrayList<Integer> selectedInds) {
 
         tableArray = new ArrayList();
@@ -82,6 +83,112 @@ public class Variant {
                         } else {
                             variantEffects.add(new VariantEffect(csqVals[j]));
                         }
+                    }
+                } else {
+                    info.put(keyValuePairs[0], keyValuePairs[1]);
+                }
+            } else {
+                info.put(infoVals[i], "TRUE");
+            }
+        }
+
+        VariantEffect ve = this.getMostDamagingEffect(variantEffects);
+        
+        info.put("CSQ Gene", ve.getGene());
+        info.put("CSQ Feature", ve.getFeature());
+        info.put("CSQ Consequence", ve.getConsequence());
+        info.put("CSQ Amino Acid Change", ve.getAaChange());
+        info.put("CSQ Sift Prediction", ve.getSift());
+        info.put("CSQ Sift Score", ve.getSiftScore());
+        info.put("CSQ PolyPhen Prediction", ve.getPolyphen());
+        info.put("CSQ PolyPhen Score", ve.getPolyphenScore());
+        info.put("CSQ Condel Prediction", ve.getCondel());
+        info.put("CSQ Condel Score", ve.getCondelScore());
+        info.put("CSQ Grantham Score", ve.getGranthamScore());
+        
+        genotypes = new ArrayList<Integer>();
+        ArrayList<String> genotypeStrings = new ArrayList<String>();
+        for (int i = 9; i < values.length; i++) {
+            genotypes.add(parseGenotypes(values[i]));
+            genotypeStrings.add(parseGenotypeString(values[i]));
+        }
+
+        for (Integer indIndex : selectedInds) {
+            String genotype = genotypeStrings.get(indIndex);
+            tableArray.add(new String(genotype));
+        }
+
+        for (String col : selectedCols) {
+            tableArray.add(info.get(col));
+        }
+
+    }
+
+    // variant object with consequences
+    public Variant(String vcfLine, ArrayList<String> selectedCols, ArrayList<Integer> selectedInds, HashMap<String, Integer> csqIndex) {
+
+        tableArray = new ArrayList();
+        String values[] = vcfLine.split("\t");
+        String chr_s = values[0];
+        String pos_s = values[1];
+        String id = new String(values[2]);
+        String ref = new String(values[3]);
+        String alt = new String(values[4]);
+        String filter = new String(values[5]);
+        String quality = new String(values[6]);
+
+        // convert the chromosome and position into ints
+        int chr_i = 0;
+        int pos_i = 0;
+
+        // remove chr string from the chomosome number if included
+        if (chr_s.startsWith("chr") || chr_s.startsWith("CHR")) {
+            chr_s = chr_s.substring(3);
+        }
+
+        try {
+            chr_i = Integer.parseInt(chr_s);
+        } catch (NumberFormatException nfe) {
+            if (chr_s.matches("X")) {
+                chr_i = 23;
+            } else if (chr_s.matches("Y")) {
+                chr_i = 24;
+            } else if (chr_s.matches("MT")) {
+                chr_i = 25;
+            } else {
+                System.out.println("can't parse chromosome '" + chr_s + "'");
+            }
+        }
+
+        try {
+            pos_i = Integer.parseInt(pos_s);
+        } catch (NumberFormatException nfe) {
+            System.out.println("position is not a number '" + pos_s + "'");
+        }
+
+        // Add the default columns
+        tableArray.add(chr_i);
+        tableArray.add(pos_i);
+        tableArray.add(id);
+        tableArray.add(ref);
+        tableArray.add(alt);
+        tableArray.add(filter);
+        tableArray.add(quality);
+
+        ArrayList<VariantEffect> variantEffects = new ArrayList<VariantEffect>();
+
+        HashMap info = new HashMap();
+
+        String infoVals[] = values[7].split(";");
+
+        for (int i = 0; i < infoVals.length; i++) {
+            if (infoVals[i].contains("=")) {
+                String[] keyValuePairs = infoVals[i].split("=");
+                if (keyValuePairs[0].matches("CSQ")) {
+                    this.csqString = new String(keyValuePairs[1]);
+                    String[] csqVals = keyValuePairs[1].split(",");
+                    for (int j = 0; j < csqVals.length; j++) {
+                        variantEffects.add(new VariantEffect(csqVals[j], csqIndex));
                     }
                 } else {
                     info.put(keyValuePairs[0], keyValuePairs[1]);
@@ -212,7 +319,7 @@ public class Variant {
         return freq;
     }
 
-    private VariantEffect getMostDamagingEffect(ArrayList<VariantEffect> variantEffects) {
+    VariantEffect getMostDamagingEffect(ArrayList<VariantEffect> variantEffects) {
         if (variantEffects.size() > 1) {
 
             VariantEffect mostDamaging = new VariantEffect();
@@ -264,12 +371,25 @@ public class Variant {
     }
 
     ArrayList<VariantEffect> getVariantEffects() {
+        
         ArrayList<VariantEffect> effects = new ArrayList<VariantEffect>();
+        // if there is no format set then assume the csq string is in Sanger(UK10K) format
         String[] csqVals = csqString.split("\\+");
         for (int i = 0; i < csqVals.length; i++) {
             if (!csqVals[i].startsWith("GERP")) {
                 effects.add(new VariantEffect(csqVals[i]));
             }
+        }
+        return effects;
+    }
+
+    ArrayList<VariantEffect> getVariantEffects(HashMap<String, Integer> csqFormat) {
+        
+        ArrayList<VariantEffect> effects = new ArrayList<VariantEffect>();
+        // if there is a format then pass it to the variant effect
+        String[] csqVals = csqString.split("\\,");
+        for (int i = 0; i < csqVals.length; i++) {
+            effects.add(new VariantEffect(csqVals[i], csqFormat));
         }
         return effects;
     }
@@ -287,18 +407,18 @@ public class Variant {
         }
         Variant v = (Variant) o;
         //...test other properties here...
-        
+
         Integer chr = (Integer) this.getTableArray().get(0);
         Integer pos = (Integer) this.getTableArray().get(1);
         Integer oChr = (Integer) v.getTableArray().get(0);
         Integer oPos = (Integer) v.getTableArray().get(1);
-        
+
         if (chr.equals(oChr) && pos.equals(oPos)) {
             return true;
         } else {
             return false;
         }
-        
-        
+
+
     }
 }
