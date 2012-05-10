@@ -92,6 +92,7 @@ public class Variant {
             }
         }
 
+        // if there is not a csq string what happens?
         VariantEffect ve = this.getMostDamagingEffect(variantEffects);
         
         info.put("CSQ Gene", ve.getGene());
@@ -122,6 +123,9 @@ public class Variant {
             tableArray.add(info.get(col));
         }
 
+        // the number of additional effects the variant has
+        tableArray.add(variantEffects.size());
+        
     }
 
     // variant object with consequences
