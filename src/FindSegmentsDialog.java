@@ -126,7 +126,7 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
                 .add(filteringPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                     .add(filteringPanelLayout.createSequentialGroup()
                         .add(filteringPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                            .add(jSeparator1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE)
+                            .add(jSeparator1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 408, Short.MAX_VALUE)
                             .add(filteringPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
                                 .add(org.jdesktop.layout.GroupLayout.LEADING, minMatchSlider, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .add(org.jdesktop.layout.GroupLayout.LEADING, jLabel1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
@@ -196,9 +196,9 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
             .add(jPanel1Layout.createSequentialGroup()
                 .add(112, 112, 112)
                 .add(clearAllBut)
-                .add(66, 66, 66)
+                .add(88, 88, 88)
                 .add(selectAllBut)
-                .addContainerGap(134, Short.MAX_VALUE))
+                .addContainerGap(112, Short.MAX_VALUE))
             .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                 .add(resultsPanel, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 511, Short.MAX_VALUE))
         );
@@ -207,8 +207,8 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
             .add(jPanel1Layout.createSequentialGroup()
                 .addContainerGap(432, Short.MAX_VALUE)
                 .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(selectAllBut)
-                    .add(clearAllBut)))
+                    .add(clearAllBut)
+                    .add(selectAllBut)))
             .add(jPanel1Layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
                 .add(org.jdesktop.layout.GroupLayout.TRAILING, jPanel1Layout.createSequentialGroup()
                     .add(resultsPanel, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 424, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
@@ -272,20 +272,21 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
             .add(CsqPanelLayout.createSequentialGroup()
                 .add(36, 36, 36)
                 .add(CsqPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                    .add(csqGerpCB)
-                    .add(csqCondelCB)
                     .add(csqPolyPhenCB)
                     .add(csqSiftCB)
                     .add(csqAACB)
                     .add(csqCsqCB)
                     .add(csqFeatureCB)
                     .add(csqGeneCB)
-                    .add(CsqPanelLayout.createSequentialGroup()
-                        .add(70, 70, 70)
-                        .add(csqSelectAllBut)
-                        .add(67, 67, 67)
-                        .add(csqClearAllBut))
-                    .add(csqGranthamCB))
+                    .add(csqGranthamCB)
+                    .add(CsqPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING, false)
+                        .add(org.jdesktop.layout.GroupLayout.LEADING, CsqPanelLayout.createSequentialGroup()
+                            .add(CsqPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
+                                .add(csqClearAllBut)
+                                .add(csqGerpCB))
+                            .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .add(csqSelectAllBut))
+                        .add(org.jdesktop.layout.GroupLayout.LEADING, csqCondelCB)))
                 .addContainerGap())
         );
         CsqPanelLayout.setVerticalGroup(
@@ -311,8 +312,8 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
                 .add(csqGerpCB)
                 .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 64, Short.MAX_VALUE)
                 .add(CsqPanelLayout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                    .add(csqSelectAllBut)
-                    .add(csqClearAllBut)))
+                    .add(csqClearAllBut)
+                    .add(csqSelectAllBut)))
         );
 
         jTabbedPane1.addTab("Consequence Options", CsqPanel);
@@ -377,7 +378,7 @@ private void okButActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:e
     }
 
     if (csq) {
-        if (this.csqGeneCB.isSelected()) {
+        if (this.csqGeneCB.isSelected()) {            
             selectedCols.add("CSQ Gene");
         }
         if (this.csqFeatureCB.isSelected()) {
