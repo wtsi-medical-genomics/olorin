@@ -67,7 +67,14 @@ public class VCF {
                     TabixReader.Iterator i = tabixVCF.query(m.getChr() + ":" + m.getStart() + "-" + m.getEnd());
                     String vcfLine = i.next();
                     while (vcfLine != null) {
-                        Variant v = new Variant(vcfLine, selectedCols, indIndexes);
+                        Variant v = null;
+                        if (meta.getCsqType().matches("SANGER")) {
+                            v = new Variant(vcfLine, selectedCols, indIndexes);
+                        }
+                        else if(meta.getCsqType().matches("VEP")) {
+                            v = new Variant(vcfLine, selectedCols, indIndexes, meta.getCsqIndex());
+                        }
+                        
                         if (filteringMode.matches("any")) {
                             int altCount = 0;
                             for (Integer geno : v.getGenotypes()) {
