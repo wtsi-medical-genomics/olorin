@@ -17,7 +17,7 @@ Jeffrey Barrett (\texttt{barrett@sanger.ac.uk})}
 
 \section{Introduction}
 
-Olorin is a tool which integrates gene flow output from Merlin and next generation sequencing data. Users can interactively filter and prioritize variants based on haplotype sharing across different sets of selected individuals and allele frequency in reference datasets.
+Olorin is a tool which integrates gene flow output from Merlin and next generation sequencing data. Users can interactively filter and prioritize variants based on haplotype sharing across different sets of selected individuals.
 
 \section{Getting started with Olorin}
 	\subsection{Installing and launching}
@@ -28,15 +28,14 @@ Olorin is a tool which integrates gene flow output from Merlin and next generati
 			\item{\texttt{Olorin.jar} - The application}
 			\item{\texttt{lib/} - Required software libraries}
 			%\item{\texttt{example/} - Example input data}
-			%\item{\texttt{Olorin-help.pdf} - Software manual}
 		\end{itemize}
 		Once decompressed you can move the \texttt{Olorin.jar} to any desired location, however you also need to ensure that you move the \texttt{lib/} directory as well.\\
 
 		\noindent You can launch Olorin by simply double clicking the \texttt{Olorin.jar} file, this will start the program with the system default amount of memory which may be insufficient for larger data sets. To launch Olorin with more memory use the command line and the following command:
 \begin{verbatim}
-java -jar Olorin.jar -Xmx 1024m 
+java -Xmx1024M -Xms1024M -jar Olorin.jar  
 \end{verbatim}
-This will launch Olorin with up to 1Gb of memory available, to increase this amount further simply change the value passed to the \texttt{-Xmx} argument.
+This will launch Olorin with 1Gb of memory available, to increase this amount further simply increase the value passed to the \texttt{-Xmx} argument.
 
 \section{Loading data}
 \subsection{Input file formats}
@@ -49,7 +48,7 @@ Olorin requires 4 input file types:
 	\item{.ped}\\
 	Pedigree information should be described in a single \texttt{.ped} file. The \texttt{.ped} file format is described \href{http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#ped}{here}.
 	\item{.vcf}\\
-	The variants from all the sequenced individuals in the pedigree should be contained in a single Varaint Call Format (VCF) file (version 4.0 or greater) which has been compressed using bgzip and indexed using \href{http://samtools.sourceforge.net/tabix.shtml}{tabix}. In cases where you have more than one VCF file, a single VCF can be created using the \texttt{vcf-merge} function of \href{http://vcftools.sourceforge.net/}{VCFtools}. The \texttt{.vcf} file format is described in more detail \href{http://www.1000genomes.org/node/101}{here}.
+	The variants from all the sequenced individuals in the pedigree should be contained in a single Varaint Call Format (VCF) file (version 4.0 or greater) which has been compressed using bgzip and indexed using \href{http://samtools.sourceforge.net/tabix.shtml}{tabix}. It is important to ensure the individual identifiers used in the \texttt{VCF} file match the identifiers used in the \texttt{.ped} and \texttt{.flow} files. In cases where you have more than one VCF file, a single VCF can be created using the \texttt{vcf-merge} function of \href{http://vcftools.sourceforge.net/}{VCFtools}. The \texttt{.vcf} file format is described in more detail \href{http://www.1000genomes.org/node/101}{here}.
 \end{itemize}
 
 All the previously described file types should be contained in one directory for each pedigree. If, for instance, you had data from a pedigree named \texttt{fam} from chromosomes 20-22, your directory would have files as follows:
@@ -66,7 +65,7 @@ fam.22.flow fam.22.map
 \subsection{Opening a data directory}
 To open a data directory select \texttt{Open directory} from the \texttt{File} menu and select its location on the file system.
 
-\section{The user interface}
+\section{The main user interface}
 \begin{figure}[H]
 	\centering
 		\includegraphics[scale=0.5]{olorin_main}
@@ -77,7 +76,7 @@ To open a data directory select \texttt{Open directory} from the \texttt{File} m
 	\item{The pedigree panel}
 		\begin{itemize}
 			\item{The pedigree panel automatically draws an interactive pedigree from the information contained in the \texttt{.ped} file.}
-			\item{More information about each individuals in the pedigree can be obtained by hovering a mouse over any node to display the individual, maternal and paternal IDs of the node.}
+			\item{More information about each individuals in the pedigree can be obtained by hovering a mouse over any node to display the individual, maternal and paternal IDs and the VCF status of the node.}
 			\item{Individuals in the pedigree which are male are drawn as squares and females as circles.}
 			\item{Affected individuals in the pedigree are shown using filled symbols and unaffected individuals are unfilled.}
 			\item{To select or unselect any individual in the pedigree simply click on the node in the pedigree, selected individuals are shown highlighted in green.}
@@ -87,24 +86,118 @@ To open a data directory select \texttt{Open directory} from the \texttt{File} m
 			\item{The variants panel displays all the variants from the \texttt{VCF} which pass the filtering criteria that has been set.}
 			\item{The table of variants can be sorted on any of the columns by simply clicking on the column heading.}
 		\end{itemize}
+	\item{Variant counter}
+		\begin{itemize}
+			\item{The counter displays both the total number of variants present in all the identified genomic regions for the filtering mode selected and the number of variants currently shown in the variant panel after all the filtering options have been applied.}
+		\end{itemize}
+	\item{Filtering modes}
+		\begin{itemize}
+			\item{Any individual mode:} In this mode Olorin will display variants in the variant table which are polymorphic in any one of the individuals present in the \texttt{VCF} file in the identified genomic regions.
+			\item{Selected individuals mode:} In this mode Olorin will display variants in the variant table which are polymorphic is all of the user selected individuals in the identified genomic regions.
+			\item{All individuals mode:} In this mode Olorin will display variants in the variant table which are polymorphic in all of the individuals present in the \texttt{VCF} file in the identified genomic regions.
+		\end{itemize}	
+	\item{The filtering panel}
+		\begin{itemize}
+			\item{Dynamic filtering tools are generated for each of the selected INFO and CSQ fields in the VCF.}
+			\item{Depending on the data type different tools are created:}
+				\begin{itemize}
+					\item{string - Free text search box}
+					\item{int/float - Cutoff generator}
+					\item{flag - true/false checkbox}
+				\end{itemize}
+		\end{itemize}
 	\item{The genome wide sharing panel}
 		\begin{itemize}
 			\item{The genome wide sharing plots show all the regions shared by the currently selected individuals across the genome.}
 			\item{The shade and height of each region reflects the number of chromosomes shared at that position across in genome.}
 			\item{Regions which are greater than or equal to the minimum matching chromosomes threshold set by the user are coloured in green.}
-		\end{itemize}	
+		\end{itemize}
 \end{enumerate}
 
-\section{Filtering variants}
-\begin{itemize}
-	\item{To filter variants first select the individuals in the pedigree you wish to filter on by clicking on them so they become highlighted.}
-	\item{Once all the desired individuals have been highlighted, select \texttt{Find Segments} from the \texttt{Tools} menu, a filtering window will then be launched. }
-	\item{The user can set the minimum number of chromosomes that must be shared across segments using a sliding bar in the window.}
-	\item{Variants can also be filtered on population frequencies, to use this feature click the \texttt{Filter variants by frequency} button, enter the path to a frequency file and enter a frequency cutoff value.}
-	\item{The frequency file needs to be compressed using bgzip and indexed using \href{http://samtools.sourceforge.net/tabix.shtml}{tabix}. Olorin expects frequency information in the format generated by the \href{http://vcftools.sourceforge.net/}{VCFtools} \texttt{--freq} command which is described \href{http://vcftools.sourceforge.net/options.html#stats}{here}.}
-	\item{By default the chromosome, position, ID, Reference allele, Alternate allele, Quality score and Filter from the \texttt{VCF} are displayed in the variant panel. Additional information from the \texttt{INFO} field of the \texttt{VCF} can also be displayed by selecting the desired columns from the \texttt{Results Options} tab of the filtering window.}
-	\item{Once you are happy with all the filtering options just click the \texttt{filter} button to get the results.}
-\end{itemize}
+\section{Finding shared segments}
+	\subsection{Selecting individuals}
+			To find shared segments between a set of individuals in your pedigree you first need to select all the desired individuals wish. To selected an individual you simply need to click on the individual's node in the pedigree, once selected the node will be highlighted in green.\\
+			
+			Once all the desired individuals have been highlighted, select \texttt{Find Segments} from the \texttt{Tools} menu, a filtering window will then be launched.
+
+	\subsection{General options}
+			The user can then set the minimum number of chromosomes that must be shared across segments using a sliding bar in the window.\\
+
+			If your VCF file does not contain population frequencies for filtering out common variants it is possible to load frequencies from a separate file and apply a cut off to all selected variants.
+			\begin{itemize}
+				\item{Variants can also be filtered on population frequencies, to use this feature click the \texttt{Filter variants by frequency} button, enter the path to a frequency file and enter a frequency cutoff value.}
+				\item{The frequency file needs to be compressed using bgzip and indexed using \href{http://samtools.sourceforge.net/tabix.shtml}{tabix}. Olorin expects frequency information in the format generated by the \href{http://vcftools.sourceforge.net/}{VCFtools} \texttt{--freq} command which is described \href{http://vcftools.sourceforge.net/options.html#stats}{here}.}
+			\end{itemize}
+
+\subsection{Info field options}
+	By default the chromosome, position, ID, Reference allele, Alternate allele, Quality score and Filter from the \texttt{VCF} are displayed in the variant panel.\\
+
+	 Additional information from the \texttt{INFO} field of the \texttt{VCF} can also be displayed by selecting the desired columns from the \texttt{Info Field Options} tab of the filtering window.
+
+\subsection{Consequence options}
+	If variant consequence information is included in your VCF in one of two currently supported formats you will be able to select the consequence columns from the  \texttt{Consequence Options} tab of the filtering window you wish to view and filter on. In the case of both formats consequence information should be included in the INFO string using the ID CSQ
+	
+	\paragraph{Default consequence format}
+	Olorin supports the custom consequence string that is produced by the UK10K analysis pipeline.
+	 \begin{itemize}
+		\item{Each effect needs to be separated using \texttt{+}}
+		\item{Information regarding each effect should be separated using \texttt{:}}		
+		\item{Each effect should contain as a minimum the Feature ID, Gene ID and the consequence type}
+		\item{Information from sources such as PolyPhen can further be separated using commas}
+		\item{If the variant is non synonymous then the last effect should always be a GERP conservation score}
+	 \end{itemize}
+	 
+	 Default format consequence strings look like this:
+	\begin{verbatim}
+	 CSQ=ENST00000325425:SCNN1D:NON_SYNONYMOUS_CODING:G>S:SIFT,tolerated(0.4)
+	 :PolyPhen,benign(0.002):Condel,neutral(0.016):Grantham,56+ENST00000353662:ACAP3
+	 :DOWNSTREAM+ENST00000354700:ACAP3:DOWNSTREAM+GERP,0.95
+	\end{verbatim}
+	
+	\paragraph{VEP format}
+	Olorin also supports output from the \href{http://www.ensembl.org/info/docs/variation/vep/index.html}{VEP} (Variant Effect Predictor) tool developed by ensembl. The VEP provides a standalone perl script which can be used to simply and easily add variant consequence strings to a VCF file.
+
+	A command such as this:
+	\begin{verbatim}
+		./variant_effect_predictor.pl -i input.vcf --vcf --sift=b --polyphen=b --condel=b	
+	\end{verbatim}
+	Will generate a VCF format file containing predicted variant consequences including predictions and scores for SIFT, PolyPhen and Condel.
+
+	VEP consequence strings look like this:
+	\begin{verbatim}
+		CSQ=G|ENSG00000186092|ENST00000335137|Transcript|NON_SYNONYMOUS_CODING|
+		421|421|141|T/A|Aca/Gca||benign(0)|tolerated(0.7)|neutral(0.002)
+	\end{verbatim}
+	
+	\paragraph{Most damaging effect}	
+	When there is more than one effect for a variant only the details of the most damaging effect will be displayed. If however you wish to view all the effects you can do so by simply clicking on the number in \texttt{Total Number of Effects} column, as this will create a popup containing details of all the effects for the variant.
+	
+	The most damaging effect is selected by scoring each effect on the following scale and selecting the effect with the highest score:\\
+
+\begin{tabular}{ l c }
+UPSTREAM & 1\\
+DOWNSTREAM & 1\\
+INTRONIC & 1\\
+INTERGENIC & 1\\	
+5PRIME UTR	& 2\\
+3PRIME UTR	& 2\\
+SYNONYMOUS CODING & 2\\
+WITHIN MATURE miRNA & 2\\
+STOP GAINED & 3\\
+STOP LOST & 3\\
+SPLICE SITE	& 3\\
+COMPLEX INDEL & 3\\
+FRAMESHIFT CODING & 3\\
+ESSENTIAL SPLICE SITE & 3\\
+NON SYNONYMOUS CODING & 3\\
+\end{tabular}
+
+\subsection{Finally}
+Once you are happy with all the filtering options just click the \texttt{filter} button to get your results.
+
+\section{User settings}
+
+In order to make it easier to apply the same set of filters to a number of datasets users can save their filtering settings to a file. Once a pedigree has been loaded and segments have been found the user can select the \texttt{Save Filtering Settings} from the \texttt{File} menu. This operation will generate a file containing details of the currently selected results columns and the filtering settings. The user can load a set of preferences at any point after a pedigree has been load by selecting \texttt{Load Filtering Settings} from the \texttt{File} menu.
 
 \section{Exporting data}
 
