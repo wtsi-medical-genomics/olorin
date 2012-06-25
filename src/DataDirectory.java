@@ -1,6 +1,7 @@
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import javax.swing.JOptionPane;
@@ -35,7 +36,7 @@ public class DataDirectory {
                 printLog("Found chromosome: " + chunks[1]);
             }
         }
-
+        
         samples = new HashMap<String, Sample>();
 
         for (String chrom : knownChroms.keySet()) {            
@@ -60,15 +61,29 @@ public class DataDirectory {
             printLog("Found and parsed map file: " + mapName);
         }
 
-        String vcfName = fileName + ".vcf.gz";
-        vcf = new VCF(directory.getAbsolutePath() + File.separator + vcfName);
+        String vcfName = fileName + ".vcf.gz";        
+        try {
+            vcf = new VCF(directory.getAbsolutePath() + File.separator + vcfName);
+        } catch(Exception e) {
+            JOptionPane.showMessageDialog(null, "Unable to process VCF. ("+ e.toString() +")", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        
         printLog("Found and parsed vcf file: " + vcfName);
 
         // pass to the pedfile object the list of inds in the vcf so the VCF column can be added to the pedigree
-        
         String pedName = fileName + ".ped";
-        PedFile pedFile = new PedFile(directory.getAbsolutePath() + File.separator + pedName);
-        ped = pedFile.makeCSV(vcf.getMeta().getSampleHash());
+        PedFile pedFile = null;
+        try {
+            pedFile = new PedFile(directory.getAbsolutePath() + File.separator + pedName);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Unable to Open the Selected .ped file.", "Error", JOptionPane.ERROR_MESSAGE);                        
+        }
+        
+        try {
+            ped = pedFile.makeCSV(vcf.getMeta().getSampleHash());
+        } catch (Exception e) {            
+            JOptionPane.showMessageDialog(null, "Unable to Write the .ped.csv file. (" + e.toString() + ")"  , "Error", JOptionPane.ERROR_MESSAGE);                        
+        }        
         printLog("Found and parsed ped file: " + pedName);
         
         // create a position hash of all the samples in the vcf
@@ -82,7 +97,7 @@ public class DataDirectory {
     }
 
     public void printLog(String text) {
-        //TODO: in verbose mode write to an output file
+        //System.out.println(text);
     }
 
     ArrayList getSequencedInds() {
