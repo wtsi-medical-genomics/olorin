@@ -5,6 +5,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.JOptionPane;
 
 class VariantEffect {
 
@@ -27,34 +28,40 @@ class VariantEffect {
     VariantEffect(String string) {
         String effectVals[] = null;
         effectVals = string.split(":");
-        setFeature(effectVals[0]);
-        setGene(effectVals[1]);
-        setConsequence(effectVals[2]);
+        // a variant effect should have a minimum of three fields
+        // feature, gene and consequence
+        if (effectVals.length >= 3) {
+            setFeature(effectVals[0]);
+            setGene(effectVals[1]);
+            setConsequence(effectVals[2]);
 
-        for (int i = 3; i < effectVals.length; i++) {
-            String effect = effectVals[i];
-            Matcher matcher = Olorin.variantEffectPattern.matcher(effect);
+            for (int i = 3; i < effectVals.length; i++) {
+                String effect = effectVals[i];
+                Matcher matcher = Olorin.variantEffectPattern.matcher(effect);
 
-            if (matcher.find()) {
-                String name = matcher.group(1);
-                String impact = matcher.group(2);
-                String score = matcher.group(3);
+                if (matcher.find()) {
+                    String name = matcher.group(1);
+                    String impact = matcher.group(2);
+                    String score = matcher.group(3);
 
-                if (name.matches("SIFT")) {
-                    setSift(impact);
-                    setSiftScore(score);
-                } else if (name.matches("PolyPhen")) {
-                    setPolyphen(impact);
-                    setPolyphenScore(score);
-                } else if (name.matches("Condel")) {
-                    setCondel(impact);
-                    setCondelScore(score);
+                    if (name.matches("SIFT")) {
+                        setSift(impact);
+                        setSiftScore(score);
+                    } else if (name.matches("PolyPhen")) {
+                        setPolyphen(impact);
+                        setPolyphenScore(score);
+                    } else if (name.matches("Condel")) {
+                        setCondel(impact);
+                        setCondelScore(score);
+                    }
+                } else if (effect.contains(">")) {
+                    setAaChange(effect);
+                } else if (effect.startsWith("Grantham")) {
+                    setGranthamScore(effect.split(",")[1]);
                 }
-            } else if (effect.contains(">")) {
-                setAaChange(effect);
-            } else if (effect.startsWith("Grantham")) {
-                setGranthamScore(effect.split(",")[1]);
             }
+        } else {
+            JOptionPane.showMessageDialog(null, "Badly formatted consequence string" + string, "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -62,43 +69,48 @@ class VariantEffect {
     VariantEffect(String string, HashMap<String, Integer> csqIndex) {
 
         Vector<String> effectVals = missingSplit(string, "|");
+        // a variant effect should have a minimum of three fields
+        // feature, gene and consequence
+        if (effectVals.size() >= 3) {
+            if (csqIndex.containsKey("Gene")) {
+                setGene(effectVals.get(csqIndex.get("Gene")));
+            }
+            if (csqIndex.containsKey("Feature")) {
+                setFeature(effectVals.get(csqIndex.get("Feature")));
+            }
+            if (csqIndex.containsKey("Consequence")) {
+                setConsequence(effectVals.get(csqIndex.get("Consequence")));
+            }
+            if (csqIndex.containsKey("Amino_acids")) {
+                setAaChange(effectVals.get(csqIndex.get("Amino_acids")));
+            }
+            if (csqIndex.containsKey("SIFT")) {
+                // assume SIFT has been run with the both command for prediction and score
+                if (!effectVals.get(csqIndex.get("SIFT")).isEmpty()) {
+                    String[] vals = effectVals.get(csqIndex.get("SIFT")).split("[\\(\\)]");
+                    setSift(vals[0]);
+                    setSiftScore(vals[1]);
+                }
+            }
 
-        if (csqIndex.containsKey("Gene")) {
-            setGene(effectVals.get(csqIndex.get("Gene")));
-        }
-        if (csqIndex.containsKey("Feature")) {
-            setFeature(effectVals.get(csqIndex.get("Feature")));
-        }
-        if (csqIndex.containsKey("Consequence")) {
-            setConsequence(effectVals.get(csqIndex.get("Consequence")));
-        }
-        if (csqIndex.containsKey("Amino_acids")) {
-            setAaChange(effectVals.get(csqIndex.get("Amino_acids")));
-        }
-        if (csqIndex.containsKey("SIFT")) {
-            // assume SIFT has been run with the both command for prediction and score
-            if (!effectVals.get(csqIndex.get("SIFT")).isEmpty()) {
-                String[] vals = effectVals.get(csqIndex.get("SIFT")).split("[\\(\\)]");
-                setSift(vals[0]);
-                setSiftScore(vals[1]);
+            if (csqIndex.containsKey("PolyPhen")) {
+                // assume PolyPhen has been run with the both command for prediction and score
+                if (!effectVals.get(csqIndex.get("PolyPhen")).isEmpty()) {
+                    String[] vals = effectVals.get(csqIndex.get("PolyPhen")).split("[\\(\\)]");
+                    setPolyphen(vals[0]);
+                    setPolyphenScore(vals[1]);
+                }
             }
-        }
-
-        if (csqIndex.containsKey("PolyPhen")) {
-            // assume PolyPhen has been run with the both command for prediction and score
-            if (!effectVals.get(csqIndex.get("PolyPhen")).isEmpty())  {
-                String[] vals = effectVals.get(csqIndex.get("PolyPhen")).split("[\\(\\)]");
-                setPolyphen(vals[0]);
-                setPolyphenScore(vals[1]);
+            if (csqIndex.containsKey("Condel")) {
+                // assume Condel has been run with the both command for prediction and score
+                if (!effectVals.get(csqIndex.get("Condel")).isEmpty()) {
+                    String[] vals = effectVals.get(csqIndex.get("Condel")).split("[\\(\\)]");
+                    setCondel(vals[0]);
+                    setCondelScore(vals[1]);
+                }
             }
-        }
-        if (csqIndex.containsKey("Condel")) {
-            // assume Condel has been run with the both command for prediction and score
-            if (!effectVals.get(csqIndex.get("Condel")).isEmpty())  {
-                String[] vals = effectVals.get(csqIndex.get("Condel")).split("[\\(\\)]");
-                setCondel(vals[0]);
-                setCondelScore(vals[1]);
-            }
+        } else {
+            JOptionPane.showMessageDialog(null, "Badly formatted consequence string" + string, "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
