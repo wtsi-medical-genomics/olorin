@@ -325,7 +325,7 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
             }
         });
 
-        okBut.setText("Filter");
+        okBut.setText("GO");
         okBut.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 okButActionPerformed(evt);
@@ -340,7 +340,7 @@ public class FindSegmentsDialog extends javax.swing.JDialog {
             .add(layout.createSequentialGroup()
                 .addContainerGap()
                 .add(cancelBut)
-                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 336, Short.MAX_VALUE)
+                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 337, Short.MAX_VALUE)
                 .add(okBut)
                 .addContainerGap())
         );
