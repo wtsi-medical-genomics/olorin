@@ -9,36 +9,19 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import javax.swing.JOptionPane;
 
 // Class to reformat the input ped format file for use with the pedViz library
 public class PedFile {
 
     String fileName;
+    BufferedReader pfr;
     ArrayList<String> samples;
 
-    public PedFile(String fn) throws Exception {
+    public PedFile(String fn) throws FileNotFoundException {
         fileName = fn;
+        pfr = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)));
         samples = new ArrayList();
-    }
-
-    public String makeCSV() throws IOException {
-        String csvFileName = fileName + ".csv";
-        PrintStream output = new PrintStream(new FileOutputStream(new File(csvFileName)));
-        output.println("Id,Fid,Mid,Sex,aff,seq");
-        BufferedReader pfr = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)));
-        String line;
-        while ((line = pfr.readLine()) != null) {
-            String values[] = line.split("\\s+");
-            String ID = values[1];
-            String patID = values[2];
-            String matID = values[3];
-            String sex = values[4];
-            String aff = values[5];
-            output.println(ID + "," + patID + "," + matID + "," + sex + "," + aff + ",1");
-            samples.add(ID);
-        }
-        output.close();
-        return csvFileName;
     }
 
     public ArrayList<String> getSamples() {
@@ -49,23 +32,24 @@ public class PedFile {
         String csvFileName = fileName + ".csv";
         PrintStream output = new PrintStream(new FileOutputStream(new File(csvFileName)));
         output.println("Id,Fid,Mid,Sex,Aff,VCF");
-        BufferedReader pfr = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)));
         String line;
         while ((line = pfr.readLine()) != null) {
-            String values[] = line.split("\\s+");
-            String ID = values[1];
-            String patID = values[2];
-            String matID = values[3];
-            String sex = values[4];
-            String aff = values[5];
-            String vcf;
-            if (vcfSampleHash.containsKey(ID)) {
-                vcf = "Yes";
-            } else {
-              vcf = "No";
+            if (!line.isEmpty()) {
+                String values[] = line.split("\\s+");
+                String ID = values[1];
+                String patID = values[2];
+                String matID = values[3];
+                String sex = values[4];
+                String aff = values[5];
+                String vcf;
+                if (vcfSampleHash.containsKey(ID)) {
+                    vcf = "Yes";
+                } else {
+                    vcf = "No";
+                }
+                output.println(ID + "," + patID + "," + matID + "," + sex + "," + aff + "," + vcf);
+                samples.add(ID);
             }
-            output.println(ID + "," + patID + "," + matID + "," + sex + "," + aff + "," + vcf);
-            samples.add(ID);
         }
         output.close();
         return csvFileName;
