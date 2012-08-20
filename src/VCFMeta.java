@@ -7,26 +7,55 @@ public class VCFMeta {
 
     ArrayList<HashMap<String, String>> info;
     HashMap<String, Info> infoObjects;
-    ArrayList<HashMap<String, String>> filter;
-    ArrayList<HashMap<String, String>> format;
-    HashMap<String, String> other;
     ArrayList<String> samples;
     HashMap<String, Integer> sampleHash;
     ArrayList<String> infoIds;
     private boolean csq = false;
     String csqType;
     HashMap<String, Integer> csqIndex;
+    String fileFormat;
     
     // replace the arraylists with info, filter and format objects?
     public VCFMeta() {
-        info = new ArrayList<HashMap<String, String>>();
-        infoObjects = new HashMap<String, Info>();
-        filter = new ArrayList<HashMap<String, String>>();
-        format = new ArrayList<HashMap<String, String>>();
-        other = new HashMap<String, String>();
         infoIds = new ArrayList<String>();
         samples = new ArrayList<String>();
         sampleHash = new HashMap<String, Integer>();
+        info = new ArrayList<HashMap<String, String>>();
+        infoObjects = new HashMap<String, Info>();
+        
+        
+        // set filter as an info field
+        HashMap filterHM = new HashMap<String, String>();
+        filterHM.put("ID", "Filter");
+        filterHM.put("Number", "1");
+        filterHM.put("Type", "String");
+        filterHM.put("Description", "PASS if this position has passed all filters, if the site has not passed all filters, a semicolon-separated list of codes for filters that fail.");
+        
+        info.add(filterHM);
+        
+        // set quality as an info field
+        HashMap qualityHM = new HashMap<String, String>();
+        qualityHM.put("ID", "Quality");
+        qualityHM.put("Number", "1");
+        qualityHM.put("Type", "Float");
+        qualityHM.put("Description", "phred-scaled quality score for the assertion made in ALT");
+                
+        info.add(qualityHM);
+        
+        Info filterOB = new Info();
+        filterOB.setId("Filter");
+        filterOB.setType("String");
+        filterOB.setDescription("PASS if this position has passed all filters, if the site has not passed all filters, a semicolon-separated list of codes for filters that fail.");
+        filterOB.setNumber("1");
+        infoObjects.put("Filter", filterOB);
+        
+        Info qualityOB = new Info();
+        qualityOB.setId("Quality");        
+        qualityOB.setType("Integer");
+        qualityOB.setDescription("phred-scaled quality score for the assertion made in ALT");
+        qualityOB.setNumber("1");
+        infoObjects.put("Quality", qualityOB);
+        
     }
 
     public void add(String s) {
@@ -88,38 +117,11 @@ public class VCFMeta {
                 }
                 info.add(ht);
                 infoObjects.put(id, inf);
-            } else if (s.startsWith("FILTER")) {
-                String[] values = s.trim().split("[<>]");
-                String[] values2 = values[1].split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
-                HashMap ht = new HashMap<String, String>();
-                for (String val : values2) {
-                    String[] values3 = val.split("=");
-                    if (values3[0].matches("Description")) {
-                        String subStr = values3[1].substring(1, values3[1].length() - 1);
-                        ht.put(values3[0], subStr);
-                    } else {
-                        ht.put(values3[0], values3[1]);
-                    }
-                }
-                filter.add(ht);
-            } else if (s.startsWith("FORMAT")) {
-                String[] values = s.trim().split("[<>]");
-                String[] values2 = values[1].split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
-                HashMap ht = new HashMap<String, String>();
-                for (String val : values2) {
-                    String[] values3 = val.split("=");
-                    if (values3[0].matches("Description")) {
-                        String subStr = values3[1].substring(1, values3[1].length() - 1);
-                        ht.put(values3[0], subStr);
-                    } else {
-                        ht.put(values3[0], values3[1]);
-                    }
-                }
-                format.add(ht);
-            } else {
-                String[] values = s.trim().split("=");
-                other.put(values[0], values[1]);
+            } else if (s.startsWith("fileformat")) {
+                String[] values = s.split("=");               
+                setFileFormat(values[1]);                               
             }
+            
         } else if (s.startsWith("#")) {
             s = s.substring(1);
             String[] values = s.trim().split("\t");
@@ -134,20 +136,16 @@ public class VCFMeta {
         return infoObjects;
     }
 
+    private void setFileFormat(String fileFormat) {
+        this.fileFormat = fileFormat;
+    }
+    
     public String getFileFormat() {
-        return other.get("fileformat");
+        return fileFormat;
     }
 
     public ArrayList<HashMap<String, String>> getInfo() {
         return info;
-    }
-
-    public ArrayList<HashMap<String, String>> getFilter() {
-        return filter;
-    }
-
-    public ArrayList<HashMap<String, String>> getFormat() {
-        return format;
     }
 
     public ArrayList<String> getSamples() {
