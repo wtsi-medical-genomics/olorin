@@ -82,7 +82,7 @@ import org.apache.commons.lang3.StringUtils;
 import util.FileFormatException;
 
 public class Olorin extends JFrame implements ActionListener, ListEventListener, MouseListener {
-    
+
     FindSegmentsDialog fsd;
     JFileChooser jfc;
     DataDirectory data;
@@ -99,7 +99,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
     JRadioButton allMode;
     JButton findSegmentsButton;
     JButton updateSegmentsButton;
-    JButton resetFiltersButton;    
+    JButton resetFiltersButton;
     private JMenu fileMenu;
     private JMenu toolMenu;
     private JMenuItem openDirectory;
@@ -121,11 +121,11 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
     public static Pattern variantEffectPattern = Pattern.compile("(\\w+),(\\w+)\\((\\d+.*\\d*)\\)");
     // store the settings of filtering for updating
     private HashMap filterSettings = new HashMap();
-    
+
     public static void main(String[] args) {
-        
+
         new Olorin();
-        
+
     }
     private boolean freqFilter;
     private double freqCutoff;
@@ -138,17 +138,18 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
     private SortedList sortedFilteredVariants;
     private EventList matcherEditors;
     private HashMap<String, Object> filterProfile;
-    
+    private int previousIndNum;
+
     Olorin() {
         super("Olorin");
-        
+
         this.setLayout(new BorderLayout());
-        
+
         jfc = new JFileChooser("user.dir");
         JMenuBar mb = new JMenuBar();
-        
+
         int menumask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
-        
+
         fileMenu = new JMenu("File");
         openDirectory = new JMenuItem("Open Directory");
         openDirectory.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, menumask));
@@ -174,33 +175,33 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
 //        fileMenu.add(savePrefs);
 
         mb.add(fileMenu);
-        
-        toolMenu = new JMenu("Tools");        
+
+        toolMenu = new JMenu("Tools");
         savePlot = new JMenuItem("Save Plot");
         savePlot.addActionListener(this);
         savePlot.setEnabled(false);
         toolMenu.add(savePlot);
-        
+
         mb.add(fileMenu);
         mb.add(toolMenu);
         setJMenuBar(mb);
-        
+
         pedigreePanel = new JPanel();
         pedigreePanel.setBorder(new LineBorder(Color.BLACK));
         pedigreePanel.setBackground(Color.WHITE);
         pedigreePanel.setLayout(new BorderLayout());
-        
+
         variantsPane = new JScrollPane();
         variantsPane.setBorder(new LineBorder(Color.BLACK));
         variantsPane.setBackground(Color.WHITE);
 
         // construct the filtering panel        
         filterPanel = new JPanel(new GridBagLayout());
-        
+
         currentVariantCount = 0;
         totalVariantCount = 0;
         variantCount = new JLabel("Currently showing " + currentVariantCount + " of " + totalVariantCount + " variants");
-        
+
         anyMode = new JRadioButton("any individual");
         anyMode.setActionCommand("anyMode");
         anyMode.setSelected(true);
@@ -211,28 +212,28 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
         allMode = new JRadioButton("all individuals");
         allMode.setActionCommand("allMode");
         allMode.addActionListener(this);
-        
+
         ButtonGroup group = new ButtonGroup();
         group.add(anyMode);
         group.add(selectedMode);
         group.add(allMode);
-        
+
         findSegmentsButton = new JButton("Find Segments");
         findSegmentsButton.addActionListener(this);
         findSegmentsButton.setEnabled(false);
-        
-        updateSegmentsButton = new JButton("Update Segments");        
+
+        updateSegmentsButton = new JButton("Update Segments");
         updateSegmentsButton.addActionListener(this);
         updateSegmentsButton.setEnabled(false);
-        
-        resetFiltersButton = new JButton("Reset Filters");        
+
+        resetFiltersButton = new JButton("Reset Filters");
         resetFiltersButton.addActionListener(this);
         resetFiltersButton.setEnabled(false);
-        
-        
+
+
         modePanel = new JPanel();
         modePanel.setLayout(new GridBagLayout());
-        
+
         GridBagConstraints c = new GridBagConstraints();
         c.anchor = GridBagConstraints.CENTER;
         c.gridx = 1;
@@ -240,51 +241,51 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
         c.ipady = 10;
         c.gridwidth = 1;
         modePanel.add(variantCount, c);
-        
+
         c.gridx = 0;
         c.gridy = 1;
         c.gridwidth = 2;
         modePanel.add(new JLabel("Show variants present in ..."), c);
-        
+
         c.gridx = 0;
         c.gridy = 2;
         c.gridwidth = 1;
         modePanel.add(anyMode, c);
-        
+
         c.gridx = 1;
         c.gridy = 2;
         modePanel.add(selectedMode, c);
-        
+
         c.gridx = 2;
-        c.gridy = 2;        
+        c.gridy = 2;
         modePanel.add(allMode, c);
-        
+
         c.ipady = 5;
         c.gridx = 0;
         c.gridy = 3;
         modePanel.add(findSegmentsButton, c);
-        
+
         c.gridx = 1;
         c.gridy = 3;
         modePanel.add(updateSegmentsButton, c);
-        
-        c.gridx = 2;
-        c.gridy = 3;        
-        modePanel.add(resetFiltersButton, c);
-        
-        
-        
+
+//        c.gridx = 2;
+//        c.gridy = 3;
+//        modePanel.add(resetFiltersButton, c);
+
+
+
         c.gridx = 0;
         c.gridy = 0;
         filterPanel.add(modePanel, c);
-        
+
         filterProfile = new HashMap<String, Object>();
-        
+
         ideogramPane = new JScrollPane();
         ideogramPane.setBorder(new LineBorder(Color.BLACK));
         ideogramPane.setBackground(Color.WHITE);
         ideogramPane.addComponentListener(new ComponentAdapter() {
-            
+
             @Override
             public void componentResized(ComponentEvent e) {
                 if (segments != null) {
@@ -310,30 +311,32 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
         JSplitPane upperPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, pedigreePanel, variantsPane);
         upperPane.setOneTouchExpandable(true);
         upperPane.setDividerLocation(500);
-        
+
         JSplitPane lowerPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, filterPanel, ideogramPane);
         lowerPane.setOneTouchExpandable(true);
         lowerPane.setDividerLocation(500);
-        
+
         mainPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, upperPane, lowerPane);
+        mainPane.setOneTouchExpandable(true);
+        
         
         contentPanel = new JPanel();
         contentPanel.setOpaque(true);
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.add(mainPane);
-        
+
         addWindowListener(new WindowAdapter() {
-            
+
             public void windowClosing(WindowEvent e) {
                 System.exit(0);
             }
         });
-        
+
         this.setContentPane(contentPanel);
         this.pack();
         this.setVisible(true);
     }
-    
+
     public void actionPerformed(ActionEvent actionEvent) {
         String command = actionEvent.getActionCommand();
         File freqFile;
@@ -342,12 +345,12 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
             if (jfc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
                 try {
                     this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-                    data = new DataDirectory(jfc.getSelectedFile().getAbsolutePath());                    
+                    data = new DataDirectory(jfc.getSelectedFile().getAbsolutePath());
                     if (data.isLoaded) {
                         drawPedigree(data.getPed());
                         findSegmentsButton.setEnabled(true);
                         loadPrefs.setEnabled(true);
-                    }                    
+                    }
                 } finally {
                     this.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                 }
@@ -365,7 +368,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                     JOptionPane.showMessageDialog(null, "Unable to open variant output file. (" + e.toString() + ")", "Error", JOptionPane.ERROR_MESSAGE);
                 }
                 PrintStream output = new PrintStream(fos);
-                
+
                 output.print("CHROM\tPOS\tID\tREF\tALT");
                 if (freqFilter) {
                     // change this to be the freq file name?
@@ -413,7 +416,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
             if (option == JFileChooser.APPROVE_OPTION) {
                 contentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                 String filename = fileChooser.getSelectedFile().getAbsolutePath();
-                
+
                 BufferedReader ffr = null;
                 try {
                     ffr = new BufferedReader(new InputStreamReader(new FileInputStream(filename)));
@@ -424,7 +427,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                 // reset the currently selected cols and prefs
                 filterProfile.clear();
                 selectedCols.clear();
-                
+
                 String line;
                 try {
                     while ((line = ffr.readLine()) != null) {
@@ -466,7 +469,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                     e.printStackTrace();
                 }
                 PrintStream output = new PrintStream(fos);
-                
+
                 for (Object me : matcherEditors) {
                     if (me.getClass().toString().contains("NumericMatcherEditor")) {
                         NumericMatcherEditor nme = (NumericMatcherEditor) me;
@@ -479,11 +482,11 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                         filterProfile.put(fme.getID(), fme.isTicked());
                     }
                 }
-                
+
                 for (String col : fsd.getSelectedCols()) {
                     output.println("COL:" + col);
                 }
-                
+
                 for (String key : filterProfile.keySet()) {
                     if (filterProfile.get(key).getClass().toString().contains("Boolean")) {
                         if ((Boolean) filterProfile.get(key)) {
@@ -497,26 +500,26 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
             }
             contentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         } else if (command.equals("Find Segments")) {
-            
-            contentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));            
-            ArrayList<Sample> selectedInds = getSelectedInds();            
+
+            contentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            ArrayList<Sample> selectedInds = getSelectedInds();
             if (selectedInds.size() > 1) {
-                
+
                 if (getSelectedSeqInds().size() > 0) {
                     fsd = new FindSegmentsDialog(selectedInds.size(), data.vcf.getMeta(), selectedCols, data.vcf.getMeta().hasCSQ());
                     fsd.setModal(true);
                     fsd.pack();
-                    fsd.setVisible(true);                    
+                    fsd.setVisible(true);
                     if (fsd.success()) {
                         String filteringMode = getFilteringMode();
                         indIds = getIndIds(filteringMode);
                         setFreqFilter(fsd.freqFilter());
                         setFreqCutoff(fsd.getFreqCutoff());
                         setSelectedCols(fsd.getSelectedCols());
-                        setMinMatches(fsd.getMinMatches());                        
+                        setMinMatches(fsd.getMinMatches());
                         SampleCompare sc = new SampleCompare();
                         segments = sc.compareMulti(selectedInds);
-                        if (segments.size() > 0) {                            
+                        if (segments.size() > 0) {
                             if (getFreqFilter()) {
                                 File ff = new File(fsd.getFreqFile());
                                 if (ff.exists()) {
@@ -527,12 +530,12 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                                 }
                             } else {
                                 vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedCols(), filteringMode, indIds, this.contentPanel);
-                            }                            
+                            }
                             if (vcfData != null) {
                                 showVariants();
                             }
                             drawIdeogram(segments);
-                            updateSegmentsButton.setEnabled(true);
+                            previousIndNum = selectedInds.size();                            
                             resetFiltersButton.setEnabled(true);
                             savePlot.setEnabled(true);
                             savePrefs.setEnabled(true);
@@ -542,35 +545,36 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                             exportVariants.setEnabled(false);
                             exportSegments.setEnabled(false);
                             savePlot.setEnabled(false);
-                            //remove the segments drawn on the idoegrams
+                            //remove the segments drawn on the ideograms
                         }
                     }
                 } else {
                     JOptionPane.showMessageDialog(null, "No Sequenced Individuals Selected.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-                
+
             } else {
                 JOptionPane.showMessageDialog(null, "Too few Individuals Selected.", "Error", JOptionPane.ERROR_MESSAGE);
-            }            
+            }
             contentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-            
-        } else if (command.equals("Update Segments")) {            
-            contentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));            
-            ArrayList<Sample> selectedInds = getSelectedInds();            
+
+        } else if (command.equals("Update Segments")) {
+            contentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            ArrayList<Sample> selectedInds = getSelectedInds();
             if (selectedInds.size() > 1) {
-                
+
                 if (getSelectedSeqInds().size() > 0) {
                     String filteringMode = getFilteringMode();
                     indIds = getIndIds(filteringMode);
                     SampleCompare sc = new SampleCompare();
                     segments = sc.compareMulti(selectedInds);
-                    if (segments.size() > 0) {                        
-                        // if the number of individuals is less than the minMatches
-                        // then set the minMatches to equal the number of individuals
-                        if (selectedInds.size() < minMatches) {
-                            minMatches = selectedInds.size();
-                        }
+                    if (segments.size() > 0) {
+                        // maintain the same penetrance model
+                        // subtract from the number of minmatched the number of inds removed
                         
+                        int indChange = selectedInds.size() - previousIndNum;
+                        
+                        minMatches = minMatches + indChange;                        
+
                         if (getFreqFilter()) {
                             File ff = new File(fsd.getFreqFile());
                             if (ff.exists()) {
@@ -581,13 +585,15 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                             }
                         } else {
                             vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedCols(), filteringMode, indIds, this.contentPanel);
-                        }                        
+                        }
                         if (vcfData != null) {
                             showVariants();
                         }
                         drawIdeogram(segments);
+                        previousIndNum = selectedInds.size(); 
                         savePlot.setEnabled(true);
                         savePrefs.setEnabled(true);
+                        updateSegmentsButton.setEnabled(false);
                     } else {
                         JOptionPane.showMessageDialog(null, "No Shared Segements Found.", "Error", JOptionPane.ERROR_MESSAGE);
                         variantsPane.removeAll();
@@ -599,12 +605,12 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                 } else {
                     JOptionPane.showMessageDialog(null, "No Sequenced Individuals Selected.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-                
+
             } else {
                 JOptionPane.showMessageDialog(null, "Too few Individuals Selected.", "Error", JOptionPane.ERROR_MESSAGE);
-            }            
+            }
             contentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-            
+
         } else if (command.equals("Save Plot")) {
             File defaultFileName = new File("olorin.png");
             jfc = new JFileChooser();
@@ -636,7 +642,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
             resetFilters();
         }
     }
-    
+
     private int getinfoOffset() {
         // create an int for the table offset to get to the info data
         // taking into account the default columns, inds and filter columns
@@ -646,7 +652,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
         }
         return infoColOffset;
     }
-    
+
     private ArrayList<String> getIndIds(String fm) {
         if (fm.matches("any") || fm.matches("all")) {
             return data.vcf.getMeta().getSamples();
@@ -656,7 +662,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
             return new ArrayList();
         }
     }
-    
+
     private String getFilteringMode() {
         if (anyMode.isSelected()) {
             return "any";
@@ -668,7 +674,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
             return "";
         }
     }
-    
+
     private ArrayList<Sample> getSelectedInds() {
         ArrayList<Sample> selectedInds = new ArrayList<Sample>();
         Iterator<String> itr = filterList.keySet().iterator();
@@ -679,7 +685,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
         }
         return selectedInds;
     }
-    
+
     private ArrayList<String> getSelectedSeqInds() {
         ArrayList<String> selectedSeqInds = new ArrayList<String>();
         for (String seqSample : data.vcf.getMeta().getSamples()) {
@@ -689,26 +695,26 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
         }
         return selectedSeqInds;
     }
-    
+
     private EventList createFilters(int infoColOffset) {
 
         // create a list to hold all the matcherEditors
         matcherEditors = GlazedLists.threadSafeList(new BasicEventList());
-        
+
         JPanel infoFilterPanel = new JPanel(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
         c.gridx = 0;
         c.gridy = 0;
         c.anchor = GridBagConstraints.WEST;
-        
+
         for (int i = 0; i < fsd.getSelectedCols().size(); i++) {
-            
+
             c.gridy = i + 1;
             String id = fsd.getSelectedCols().get(i);
-            
+
             String type = null;
             String number = null;
-            
+
             if (id.startsWith("CSQ")) {
                 if (id.matches("CSQ Gene")
                         || id.matches("CSQ Feature")
@@ -739,7 +745,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                     String text = (String) filterProfile.get(id);
                     sme.setText(text);
                 }
-                
+
                 matcherEditors.add(sme.getTextComponentMatcherEditor());
                 infoFilterPanel.add(sme.getWidget(), c);
             } else if (type.matches("Integer") && number.matches("1")) {  // if the info field has a number > 1 or '.' - can't create a simple filter
@@ -789,7 +795,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                 infoFilterPanel.add(fme.getWidget(), c);
             }
         }
-        
+
         filterPanel.removeAll();
         c.gridx = 0;
         c.gridy = 0;
@@ -799,15 +805,15 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
         c.weightx = 1;
         c.weighty = 1;
         filterPanel.add(new JScrollPane(infoFilterPanel), c);
-        
+
         return matcherEditors;
     }
-    
+
     private void drawIdeogram(ArrayList<SegmentMatch> m) {
         int chrNum = data.getChrNum();
         Collections.sort(m);
         HashMap<String, MarkerCollection> segHash = new HashMap<String, MarkerCollection>();
-        for (SegmentMatch sm : m) {            
+        for (SegmentMatch sm : m) {
             if (!segHash.containsKey(sm.getChr())) {
                 segHash.put(sm.getChr(), new MarkerCollection());
             }
@@ -846,64 +852,64 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
         // add one panel per chromosome
         JPanel chr_panel = new JPanel();
         chr_panel.setLayout(new GridBagLayout());
-        
+
         GridBagConstraints c = new GridBagConstraints();
         c.anchor = GridBagConstraints.NORTHWEST;
         c.gridheight = 1;
         c.gridwidth = 1;
         c.fill = GridBagConstraints.NONE;
-        
+
         int h = ideogramPane.getHeight();
         int w = ideogramPane.getWidth();
 
         // create the height scale for the chromosome
         // should use a more inteligent figure than just 300
         double r = (double) h / 300;
-        
+
         for (int i = 0; i < 22; ++i) {
             IdeogramView iv = new IdeogramView(r);
             iv.setChromosome(i + 1);
             iv.setIdeogramDB(db);
             // when creating the ideogram change the width of the chromosome and sharing blocks acording to the size of the window
             iv.setPreferredSize(new Dimension(Math.round(w / 22), h));
-            
+
             if (segHash.containsKey(Integer.toString(i + 1))) {
                 iv.setSegments(segHash.get(Integer.toString(i + 1)), minMatches);
             }
-            
+
             c.gridx = i;
             c.gridy = 1;
-            
+            iv.addMouseListener(this);
             chr_panel.add(iv, c);
         }
-        
+
         ideogramPane.setViewportView(chr_panel);
         contentPanel.revalidate();
         contentPanel.repaint();
     }
-    
+
     private void drawPedigree(String csvFile) {
-        
+
         Graph graph = new Graph();
         CsvGraphLoader loader = new CsvGraphLoader(csvFile, ",");
         loader.setSettings("Id", "Mid", "Fid");
         loader.load(graph);
-        
+
         DefaultNodeView n = new DefaultNodeView();
         n.addHintAttribute("Id");
         n.addHintAttribute("Mid");
         n.addHintAttribute("Fid");
         n.addHintAttribute("VCF");
         n.setBorderWidth(0.1f);
-        
+
         DefaultEdgeView e = new DefaultEdgeView();
         e.setWidth(0.1f);
         e.setColor(Color.black);
         e.setConnectChildren(true);
-        
+
         Sugiyama s = new Sugiyama(graph, n, e);
         s.run();
-        
+
         GraphView2D view = new GraphView2D(s.getLayoutedGraph());
         view.addRule(new ColorRule("Aff", "1", Color.white));
         view.addRule(new ColorRule("Aff", "2", Color.black));
@@ -911,10 +917,10 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
         view.addRule(new ShapeRule("Sex", "2", new SymbolSexFemale()));
         view.addRule(new ShapeRule("Sex", "-1", new SymbolSexUndesignated()));
         view.setSelectionEnabled(true);
-        
+
         view.addNodeListener(
                 new NodeListener() {
-                    
+
                     @Override
                     public void onNodeEvent(NodeEvent event) {
                         if (event.getType() == NodeEvent.SELECTED) {
@@ -945,6 +951,11 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                                 }
                                 filterList.put(idSelected, 1);
                             }
+                            // if filter segments has already been run
+                            // allow the user to update segments when a node is changed
+                            if (segments != null) {
+                                updateSegmentsButton.setEnabled(true);
+                            }
                         }
                     }
                 });
@@ -953,7 +964,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
         contentPanel.revalidate();
         contentPanel.repaint();
     }
-    
+
     public static String join(Collection s, String delimiter) {
         StringBuffer buffer = new StringBuffer();
         Iterator iter = s.iterator();
@@ -965,7 +976,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
         }
         return buffer.toString();
     }
-    
+
     private ArrayList<Double> getValues(int i) {
         ArrayList<Double> values = new ArrayList<Double>();
         for (Variant v : vcfData) {
@@ -977,47 +988,47 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
         }
         return values;
     }
-    
+
     private void setFreqFilter(boolean freqFilter) {
         this.freqFilter = freqFilter;
     }
-    
+
     private Boolean getFreqFilter() {
         return this.freqFilter;
     }
-    
+
     private void setFreqCutoff(double freqCutoff) {
         this.freqCutoff = freqCutoff;
     }
-    
+
     private double getFreqCutoff() {
         return this.freqCutoff;
     }
-    
+
     private void setSelectedCols(ArrayList<String> selectedCols) {
         this.selectedCols = selectedCols;
     }
-    
+
     private ArrayList<String> getSelectedCols() {
         return this.selectedCols;
     }
-    
+
     private void setMinMatches(int minMatches) {
         this.minMatches = minMatches;
     }
-    
+
     private int getMinMatches() {
         return this.minMatches;
     }
-    
+
     private void setFreqFile(String freqFile) {
         this.freqFile = freqFile;
     }
-    
+
     private String getFreqFile() {
         return this.freqFile;
     }
-    
+
     private void showVariants() {
         variants = GlazedLists.threadSafeList(new BasicEventList<Variant>());
         variants.addAll(vcfData);
@@ -1041,7 +1052,7 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
         exportVariants.setEnabled(true);
         exportSegments.setEnabled(true);
     }
-    
+
     private void resetFilters() {
         for (Object me : matcherEditors) {
             if (me.getClass().toString().contains("NumericMatcherEditor")) {
@@ -1056,17 +1067,17 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                 fme.actionPerformed(null);
             } else if (me.getClass().toString().contains("TextComponentMatcherEditor")) {
                 TextComponentMatcherEditor tme = (TextComponentMatcherEditor) me;
-                
+
                 String[] array = new String[1];
                 array[0] = "testing";
-                
+
                 tme.setFilterText(array);
             }
         }
     }
-    
+
     private void refreshVariants(String mode) {
-        
+
         if (segments != null) {
             contentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             // store all the currently selected filters    
@@ -1083,16 +1094,16 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                     filterProfile.put(fme.getID(), fme.isTicked());
                 }
             }
-            
+
             indIds = getIndIds(mode);
             if (getFreqFilter()) {
                 vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedCols(), mode, indIds, getFreqFile(), getFreqCutoff());
             } else {
                 vcfData = data.vcf.getVariants(segments, minMatches, fsd.getSelectedCols(), mode, indIds, this.contentPanel);
             }
-            
+
             if (vcfData != null) {
-                
+
                 variants = GlazedLists.threadSafeList(new BasicEventList<Variant>());
                 variants.addAll(vcfData);
                 this.setTotalVariantCount(variants.size());
@@ -1100,21 +1111,21 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
                 this.setVariantCount();
                 matcherEditors = createFilters(getinfoOffset());
                 FilterList filteredVariants = new FilterList(variants, new CompositeMatcherEditor(matcherEditors));
-                
+
                 sortedFilteredVariants = new SortedList(filteredVariants, null);
                 sortedFilteredVariants.addListEventListener(this);
 
                 // apply any set filters
                 for (Object me : matcherEditors) {
                     if (me.getClass().toString().contains("NumericMatcherEditor")) {
-                        NumericMatcherEditor nme = (NumericMatcherEditor) me;                        
+                        NumericMatcherEditor nme = (NumericMatcherEditor) me;
                         nme.actionPerformed(null);
                     } else if (me.getClass().toString().contains("FlagMatcherEditor")) {
                         FlagMatcherEditor fme = (FlagMatcherEditor) me;
                         fme.actionPerformed(null);
                     }
                 }
-                
+
                 table = new JTable(new EventTableModel<Variant>(sortedFilteredVariants, new VariantTableFormat(fsd.getSelectedCols(), getFreqFilter(), indIds)));
                 table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
                 table.addMouseListener(this);
@@ -1128,33 +1139,33 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
             contentPanel.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
     }
-    
+
     @Override
     public void listChanged(ListEvent le) {
         this.setCurrentVariantCount(le.getSourceList().size());
         setVariantCount();
     }
-    
+
     private void setVariantCount() {
         variantCount.setText("Currently showing " + getCurrentVariantCount() + " of " + getTotalVariantCount() + " variants");
     }
-    
+
     public int getCurrentVariantCount() {
         return currentVariantCount;
     }
-    
+
     public void setCurrentVariantCount(int currentVariantCount) {
         this.currentVariantCount = currentVariantCount;
     }
-    
+
     public int getTotalVariantCount() {
         return totalVariantCount;
     }
-    
+
     public void setTotalVariantCount(int totalVariantCount) {
         this.totalVariantCount = totalVariantCount;
     }
-    
+
     @Override
     public void mouseClicked(MouseEvent me) {
         int col = table.columnAtPoint(me.getPoint());
@@ -1166,21 +1177,37 @@ public class Olorin extends JFrame implements ActionListener, ListEventListener,
             vef.setDefaultCloseOperation(VariantEffectsFrame.DISPOSE_ON_CLOSE);
             vef.pack();
             vef.setVisible(true);
-        }
+        } 
+//        else if (me.getComponent().getClass().toString().contains("IdeogramView")) {
+//            IdeogramView iv = (IdeogramView) me.getComponent();
+//            
+//            // pass the frame the chromosome and segments
+//            // then let the frame draw the ideogram
+//            // add zoom in and out buttons
+            
+//            // stop generating popups when the image is clicked
+//            iv.removeMouseListener(this);
+//            JPanel chr_panel = new JPanel();
+//            chr_panel.add(iv);
+//            IdeogramFrame ideogramFrame = new IdeogramFrame(chr_panel);
+//            ideogramFrame.setDefaultCloseOperation(IdeogramFrame.DISPOSE_ON_CLOSE);
+//            ideogramFrame.pack();
+//            ideogramFrame.setVisible(true);
+//        }
     }
-    
+
     @Override
     public void mousePressed(MouseEvent me) {
     }
-    
+
     @Override
     public void mouseReleased(MouseEvent me) {
     }
-    
+
     @Override
     public void mouseEntered(MouseEvent me) {
     }
-    
+
     @Override
     public void mouseExited(MouseEvent me) {
     }
