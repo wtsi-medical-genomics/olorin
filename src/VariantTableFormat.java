@@ -14,8 +14,6 @@ class VariantTableFormat implements TableFormat {
         cols.add("ID");
         cols.add("Ref");
         cols.add("Alt");
-        cols.add("Quality");
-        cols.add("Filter");
         if (freqFilter) {
             // change this to be the freq file name?
             cols.add("Frequency");
@@ -26,6 +24,7 @@ class VariantTableFormat implements TableFormat {
             cols.add(s);
         }
     
+        // only add this column if csq is present in vcf
         cols.add("Total effects");
     }
 
@@ -42,6 +41,7 @@ class VariantTableFormat implements TableFormat {
     @Override
     public Object getColumnValue(Object e, int i) {
         Variant v = (Variant) e;
+
         return v.getTableArray().get(i);
     }
 }
