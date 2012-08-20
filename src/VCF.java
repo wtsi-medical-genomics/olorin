@@ -3,6 +3,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
 
@@ -20,10 +23,10 @@ public class VCF {
                 tabixVCF = new TabixReader(fileName);
                 this.parseHeader();
             } else {
-                throw new Exception("VCF needs to be indexed using tabix");
+                throw new Exception("VCF needs to be indexed using tabix:\nExpecting file '" + fileName + ".tbi'");
             }
         } else {
-            throw new Exception("VCF needs to be compressed using bgzip");
+            throw new Exception("VCF needs to be compressed using bgzip:\nExpecting file '" + fileName + ".gz'");
         }
     }
 
@@ -36,14 +39,13 @@ public class VCF {
         }
     }
 
-    public ArrayList<Variant> getVariants(ArrayList<SegmentMatch> matches, int matchNum, ArrayList<String> selectedCols, String filteringMode, ArrayList<String> indIds, JPanel contentPanel) throws IOException {
+    public ArrayList<Variant> getVariants(ArrayList<SegmentMatch> matches, int matchNum, ArrayList<String> selectedCols, String filteringMode, ArrayList<String> indIds, JPanel contentPanel) {
 
         // convert the ind id into a column index in the file
         ArrayList<Integer> indIndexes = new ArrayList<Integer>();
         for (String id : indIds) {
             indIndexes.add(meta.sampleHash.get(id));
         }
-
 
         // check if the segment contains the sequenced inds
         int segmentCount = 0;
@@ -62,61 +64,68 @@ public class VCF {
             ArrayList<Integer> segInds = new ArrayList(m.getIds());
             segInds.retainAll(indIds);
             if (m.getIds().size() >= matchNum && segInds.size() > 0) {
+                try {
+                    if (tabixVCF.query(m.getChr() + ":" + m.getStart() + "-" + m.getEnd()) != null) {
+                        TabixReader.Iterator i = tabixVCF.query(m.getChr() + ":" + m.getStart() + "-" + m.getEnd());
+                        String vcfLine = i.next();
+                        while (vcfLine != null) {
+                            Variant v = null;
+                            if (meta.getCsqType() != null) {
+                                if (meta.getCsqType().matches("SANGER")) {
+                                    v = new Variant(vcfLine, selectedCols, indIndexes, meta.getCsqType());
+                                } else if (meta.getCsqType().matches("VEP")) {
+                                    v = new Variant(vcfLine, selectedCols, indIndexes, meta.getCsqType(), meta.getCsqIndex());
+                                }
+                            } else {
+                                // there are no csq strings in the vcf
+                                v = new Variant(vcfLine, selectedCols, indIndexes);
+                            }
 
-                if (tabixVCF.query(m.getChr() + ":" + m.getStart() + "-" + m.getEnd()) != null) {
-                    TabixReader.Iterator i = tabixVCF.query(m.getChr() + ":" + m.getStart() + "-" + m.getEnd());
-                    String vcfLine = i.next();
-                    while (vcfLine != null) {
-                        Variant v = null;
-                        if (meta.getCsqType().matches("SANGER")) {
-                            v = new Variant(vcfLine, selectedCols, indIndexes);
+                            if (filteringMode.matches("any")) {
+                                int altCount = 0;
+                                for (Integer geno : v.getGenotypes()) {
+                                    altCount += geno;
+                                }
+
+                                if (altCount >= 1) {
+                                    if (!variants.contains(v)) {
+                                        variants.add(v);
+                                    }
+                                }
+                            } else if (filteringMode.matches("selected")) {
+                                int altCount = 0;
+                                for (Integer geno : v.getGenotypes(indIndexes)) {
+                                    if (geno >= 1) {
+                                        altCount++;
+                                    }
+                                }
+
+                                if (altCount == indIndexes.size()) {
+                                    if (!variants.contains(v)) {
+                                        variants.add(v);
+                                    }
+                                }
+                            } else if (filteringMode.matches("all")) {
+                                int altCount = 0;
+                                for (Integer geno : v.getGenotypes()) {
+                                    if (geno >= 1) {
+                                        altCount++;
+                                    }
+                                }
+
+                                if (altCount == meta.getSampleHash().size()) {
+                                    if (!variants.contains(v)) {
+                                        variants.add(v);
+                                    }
+                                }
+                            } else {
+                                // invalid filtering mode
+                            }
+                            vcfLine = i.next();
                         }
-                        else if(meta.getCsqType().matches("VEP")) {
-                            v = new Variant(vcfLine, selectedCols, indIndexes, meta.getCsqIndex());
-                        }
-                        
-                        if (filteringMode.matches("any")) {
-                            int altCount = 0;
-                            for (Integer geno : v.getGenotypes()) {
-                                altCount += geno;
-                            }
-
-                            if (altCount >= 1) {
-                                if (!variants.contains(v)) {
-                                    variants.add(v);
-                                }
-                            }
-                        } else if (filteringMode.matches("selected")) {
-                            int altCount = 0;
-                            for (Integer geno : v.getGenotypes(indIndexes)) {
-                                if (geno >= 1) {
-                                    altCount++;
-                                }
-                            }
-
-                            if (altCount == indIndexes.size()) {
-                                if (!variants.contains(v)) {
-                                    variants.add(v);
-                                }
-                            }
-                        } else if (filteringMode.matches("all")) {
-                            int altCount = 0;
-                            for (Integer geno : v.getGenotypes()) {
-                                if (geno >= 1) {
-                                    altCount++;
-                                }
-                            }
-
-                            if (altCount == meta.getSampleHash().size()) {
-                                if (!variants.contains(v)) {
-                                    variants.add(v);
-                                }
-                            }
-                        } else {
-                            // invalid filtering mode
-                        }
-                        vcfLine = i.next();
                     }
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(null, "Problem fetching variants from VCF:\n'" + m.getChr() + ":" + m.getStart() + "-" + m.getEnd() + "'\n'" + e.toString() + "'", "Error", JOptionPane.ERROR_MESSAGE);
                 }
                 segmentProgress++;
             }
@@ -124,9 +133,12 @@ public class VCF {
         return variants;
     }
 
-    public ArrayList<Variant> getVariants(ArrayList<SegmentMatch> matches, int matchNum, ArrayList<String> selectedCols, String filteringMode, ArrayList<String> indIds, String ff, double cutoff) throws IOException {
-
-        setFreqFile(ff);
+    public ArrayList<Variant> getVariants(ArrayList<SegmentMatch> matches, int matchNum, ArrayList<String> selectedCols, String filteringMode, ArrayList<String> indIds, String ff, double cutoff) {
+        try {
+            setFreqFile(ff);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Can't open frequency file:\n'" + ff + "'\n'" + e.toString() + "'", "Error", JOptionPane.ERROR_MESSAGE);
+        }
         setFreqCutoff(cutoff);
 
         // convert the ind id into a column index in the file
@@ -142,55 +154,67 @@ public class VCF {
             if (m.getIds().size() >= matchNum) {
                 if (tabixVCF.query(m.getChr() + ":" + m.getStart() + "-" + m.getEnd()) != null) {
                     TabixReader.Iterator i = tabixVCF.query(m.getChr() + ":" + m.getStart() + "-" + m.getEnd());
-                    if (i.next() != null) {
-                        String vcfLine = i.next();
-                        while (vcfLine != null) {
-
-                            Variant v = new Variant(vcfLine, selectedCols, indIndexes);
-
-                            Double freq = getFreq(v);
-
-                            if (freq < getFreqCutoff()) {
-
-                                v.setFreq(freq);
-
-                                if (filteringMode.matches("any")) {
-                                    int altCount = 0;
-                                    for (Integer geno : v.getGenotypes()) {
-                                        altCount += geno;
+                    try {
+                        if (i.next() != null) {
+                            String vcfLine = i.next();
+                            while (vcfLine != null) {
+                                Variant v = null;
+                                if (meta.getCsqType() != null) {
+                                    if (meta.getCsqType().matches("SANGER")) {
+                                        v = new Variant(vcfLine, selectedCols, indIndexes, meta.getCsqType());
+                                    } else if (meta.getCsqType().matches("VEP")) {
+                                        v = new Variant(vcfLine, selectedCols, indIndexes, meta.getCsqType(), meta.getCsqIndex());
                                     }
-                                    if (altCount >= 1) {
-                                        variants.add(v);
-                                    }
-
-                                } else if (filteringMode.matches("selected")) {
-                                    int altCount = 0;
-                                    for (Integer geno : v.getGenotypes()) {
-                                        if (geno >= 1) {
-                                            altCount++;
-                                        }
-                                    }
-                                    if (altCount == indIndexes.size()) {
-                                        variants.add(v);
-                                    }
-
-                                } else if (filteringMode.matches("all")) {
-                                    int altCount = 0;
-                                    for (Integer geno : v.getGenotypes()) {
-                                        if (geno >= 1) {
-                                            altCount++;
-                                        }
-                                    }
-                                    if (altCount == meta.getSampleHash().size()) {
-                                        variants.add(v);
-                                    }
-
                                 } else {
-                                    // invalid filtering mode
+                                    // there are no csq strings in the vcf
+                                    v = new Variant(vcfLine, selectedCols, indIndexes);
                                 }
+                                Double freq = getFreq(v);
+
+                                if (freq < getFreqCutoff()) {
+
+                                    v.setFreq(freq);
+
+                                    if (filteringMode.matches("any")) {
+                                        int altCount = 0;
+                                        for (Integer geno : v.getGenotypes()) {
+                                            altCount += geno;
+                                        }
+                                        if (altCount >= 1) {
+                                            variants.add(v);
+                                        }
+
+                                    } else if (filteringMode.matches("selected")) {
+                                        int altCount = 0;
+                                        for (Integer geno : v.getGenotypes()) {
+                                            if (geno >= 1) {
+                                                altCount++;
+                                            }
+                                        }
+                                        if (altCount == indIndexes.size()) {
+                                            variants.add(v);
+                                        }
+
+                                    } else if (filteringMode.matches("all")) {
+                                        int altCount = 0;
+                                        for (Integer geno : v.getGenotypes()) {
+                                            if (geno >= 1) {
+                                                altCount++;
+                                            }
+                                        }
+                                        if (altCount == meta.getSampleHash().size()) {
+                                            variants.add(v);
+                                        }
+
+                                    } else {
+                                        // invalid filtering mode
+                                    }
+                                }
+                                vcfLine = i.next();
                             }
-                            vcfLine = i.next();
                         }
+                    } catch (IOException e) {
+                        JOptionPane.showMessageDialog(null, "Problem fetching variants from VCF:\n'" + m.getChr() + ":" + m.getStart() + "-" + m.getEnd() + "'\n'" + e.toString() + "'", "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }
