@@ -33,22 +33,25 @@ public class DataDirectory {
             return;
         }
         printLog("Opened directory: " + dir);
-        
+
         //what chromosomes do we have here?
         knownChroms = new HashMap<String, Boolean>();
         String fileName = null;
-        for (File flowFile : directory.listFiles(new ExtensionFilter(".flow"))) {
-            String[] chunks = flowFile.getName().split("\\.");
-            if (fileName == null) {
-                fileName = chunks[0];
-            }
-            if (knownChroms.get(chunks[1]) == null) {
-                knownChroms.put(chunks[1], true);
-                printLog("Found chromosome: " + chunks[1]);
-            }
-        }
+        File[] flowFiles = directory.listFiles(new ExtensionFilter(".flow"));
 
-        if (knownChroms.size() > 0) {
+        if (flowFiles.length > 1) {
+            // flow and map files are arranged by chromosome
+            for (File flowFile : flowFiles) {
+                String[] chunks = flowFile.getName().split("\\.");
+                if (fileName == null) {
+                    fileName = chunks[0];
+                }
+                if (knownChroms.get(chunks[1]) == null) {
+                    knownChroms.put(chunks[1], true);
+                    printLog("Found chromosome: " + chunks[1]);
+                }
+            }
+
             samples = new HashMap<String, Sample>();
 
             for (String chrom : knownChroms.keySet()) {
@@ -91,50 +94,84 @@ public class DataDirectory {
                 printLog("Parsed map file: " + mapName);
             }
 
-            String vcfName = fileName + ".vcf.gz";
-            printLog("Trying to open vcf file: " + vcfName);
+        } else if (flowFiles.length == 1) {
+            // single flow file found - switch to single file mode
+            printLog("Using single file input mode");
+            String flowName = flowFiles[0].getName();
+            String[] chunks = flowFiles[0].getName().split("\\.");
+            fileName = chunks[0];
+
+            // open the map file and check what chromosomes are in the file
+
+            String mapName = fileName + ".map";
+            printLog("Trying to open .map file: " + mapName);
+            MapFile map = null;
             try {
-                vcf = new VCF(directory.getAbsolutePath() + File.separator + vcfName);
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Unable to process VCF:\n'" + fileName + ".vcf.gz'\n'" + e.toString() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
+                map = new MapFile(directory.getAbsolutePath() + File.separator + mapName);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(null, "Unable to Open .map file:\n'" + mapName + "'\n'" + ex.getMessage() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            printLog("Parsed vcf file: " + vcfName);
+            printLog("Opened .map file: " + mapName);
 
-            // pass to the pedfile object the list of inds in the vcf so the VCF column can be added to the pedigree
-            String pedName = fileName + ".ped";
-            printLog("Trying to open .ped file: " + pedName);
-            PedFile pedFile = null;
+
+            printLog("Trying to open .flow file: " + flowName);
+            FlowFile flow = null;
             try {
-                pedFile = new PedFile(directory.getAbsolutePath() + File.separator + pedName);
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Unable to Open .ped file:\n'" + pedName + "'\n'" + e.getMessage()+"'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
+                flow = new FlowFile(directory.getAbsolutePath() + File.separator + flowName);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null, "Unable to Open .flow file:\n'" + flowName + "'\n'" + ex.getMessage() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+            printLog("Opened .flow file: " + flowName);
 
-            try {
-                ped = pedFile.makeCSV(vcf.getMeta().getSampleHash());
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Unable to Write the .ped.csv file:\n'" + e.toString() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            printLog("Found and parsed ped file: " + pedName);
+            flow.setPos(map.getPositionsByChromosome());
+            flow.parseFlow();
+            samples = flow.getSamplesAllChromosomes();
+            printLog("Parsed flow file: " + flowName);
+            printLog("Parsed map file: " + mapName);
 
-            // create a position hash of all the samples in the vcf
-            ArrayList<String> vcfSamples = vcf.getMeta().getSamples();
-            HashMap<String, Integer> vcfSampleHash = new HashMap<String, Integer>();
-            int counter = 0;
-            for (String s : vcfSamples) {
-                counter++;
-                vcfSampleHash.put(s, counter);
-            }
 
-            isLoaded = true;
 
         } else {
-            JOptionPane.showMessageDialog(null, "No .chr.flow files found in the directory:\n'" + dir + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
+            // no flow files found - not a valid olorin input directory
+            JOptionPane.showMessageDialog(null, "No flow files found in the directory:\n'" + dir + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
+
+        String vcfName = fileName + ".vcf.gz";
+        printLog("Trying to open vcf file: " + vcfName);
+        try {
+            vcf = new VCF(directory.getAbsolutePath() + File.separator + vcfName);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Unable to process VCF:\n'" + fileName + ".vcf.gz'\n'" + e.toString() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        printLog("Parsed vcf file: " + vcfName);
+
+        // pass to the pedfile object the list of inds in the vcf so the VCF column can be added to the pedigree
+        String pedName = fileName + ".ped";
+        printLog("Trying to open .ped file: " + pedName);
+        PedFile pedFile = null;
+        try {
+            pedFile = new PedFile(directory.getAbsolutePath() + File.separator + pedName);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Unable to Open .ped file:\n'" + pedName + "'\n'" + e.getMessage() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            ped = pedFile.makeCSV(vcf.getMeta().getSampleHash());
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Unable to Write the .ped.csv file:\n'" + e.toString() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        printLog("Found and parsed ped file: " + pedName);
+
+        isLoaded = true;
+
+
     }
 
     public void printLog(String text) {
