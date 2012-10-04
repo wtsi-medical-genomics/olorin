@@ -45,9 +45,12 @@ This will launch Olorin with 1Gb of memory available, to increase this amount fu
 Olorin requires 4 input file types:
 \begin{itemize}
 	\item{.flow}\\
-	Estimated haplotypes should be input as \texttt{.flow} files, generated using \href{http://www.sph.umich.edu/csg/abecasis/Merlin/}{MERLIN}. The \texttt{.flow} file format is described \href{http://www.sph.umich.edu/csg/abecasis/Merlin/tour/haplotyping.html}{here}. Olorin requires the \texttt{.flow} files to be in the horizontal format for outputting haplotypes, this is achieved simply by passing \href{http://www.sph.umich.edu/csg/abecasis/Merlin/reference.html}{MERLIN} the \texttt{--horizontal} flag along with your command. The \texttt{.flow} files should be split by chromosome with the files named using the following format: fam.22.flow (for chromosome 22).
+	Estimated haplotypes should be input as \texttt{.flow} files, generated using \href{http://www.sph.umich.edu/csg/abecasis/Merlin/}{MERLIN}. The \texttt{.flow} file format is described \href{http://www.sph.umich.edu/csg/abecasis/Merlin/tour/haplotyping.html}{here}. Olorin requires the \texttt{.flow} files to be in the horizontal format for outputting haplotypes, this is achieved simply by passing \href{http://www.sph.umich.edu/csg/abecasis/Merlin/reference.html}{MERLIN} the \texttt{--horizontal} flag along with your command. 
+	
+	
+	The \texttt{.flow} files may contain multiple chromosomes data in a single file or can be split by chromosome with the files named using the following format: fam.22.flow (for chromosome 22).
 	\item{.map}\\
-	The genomic position of each marker used to generate the estimated haplotypes is loaded into Olorin using \texttt{.map} files. The \texttt{.map} file format is described \href{http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#map}{here}. The \texttt{.map} files should also be split by chromosome with the files named using the following format: fam.22.map (for chromosome 22).
+	The genomic position of each marker used to generate the estimated haplotypes is loaded into Olorin using \texttt{.map} files. The \texttt{.map} file format is described \href{http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#map}{here}. The \texttt{.map} files may contain multiple chromosomes data in a single file or can be split by chromosome with the files named using the following format: fam.22.map (for chromosome 22).
 	\item{.ped}\\
 	Pedigree information should be described in a single \texttt{.ped} file. The \texttt{.ped} file format is described \href{http://pngu.mgh.harvard.edu/~purcell/plink/data.shtml#ped}{here}.
 	\item{.vcf}\\
@@ -97,7 +100,17 @@ Olorin also has 1 optional input file type:
 
 \subsection{File organization}
 
-All the previously described file types should be contained in one directory for each pedigree. If, for instance, you had data from a pedigree named \texttt{fam} from chromosomes 20-22, your directory would have files as follows:
+All the previously described file types should be contained in one directory for each pedigree. If, for instance, you had data from a pedigree named \texttt{fam}, your directory would have files as follows:
+
+\begin{verbatim}
+fam.ped
+fam.vcf.gz
+fam.vcf.gz.tbi
+fam.flow 
+fam.map
+\end{verbatim}
+
+Data for the same pedigree that was split by chromosome from chromosomes 20-22 would look as follows:
 
 \begin{verbatim}
 fam.ped
