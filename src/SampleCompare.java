@@ -15,9 +15,12 @@ public class SampleCompare {
 
 	public ArrayList<SegmentMatch> compareMulti (ArrayList<Sample> samples){
 		ArrayList <SegmentMatch> allMatches = new ArrayList<SegmentMatch> ();  
-		Enumeration<String> i = samples.get(0).getChromosomes();
-		while (i.hasMoreElements()) {
-			String chr = i.nextElement();
+		//Enumeration<String> i = samples.get(0).getChromosomes();
+                             
+                Iterator<String> itr = samples.get(0).getChromosomes();
+                
+		while (itr.hasNext()) {
+			String chr = itr.next();
 			ArrayList<Iterator> segArrays = new ArrayList<Iterator> ();
 			for (Sample s : samples){
 				//we might want to track that one of these is mat, one is pat, but right now I don't care
