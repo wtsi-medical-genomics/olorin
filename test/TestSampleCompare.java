@@ -62,7 +62,6 @@ public class TestSampleCompare extends TestCase {
 		int count = 0;
 		while (i.hasNext()) {
 			SegmentMatch match = i.next();
-			System.out.println(match.getStart() + " " + match.getEnd() + " " + match.getCodeString() + " " + match.getIds());
 			count++;
 		}
 		assertEquals(4, count);
@@ -74,7 +73,6 @@ public class TestSampleCompare extends TestCase {
 		int count2 = 0;
 		while (j.hasNext()) {
 			SegmentMatch match = j.next();
-			System.out.println(match.getStart() + " " + match.getEnd() + " " + match.getCodeString() + " " + match.getIds());
 			count2++;
 		}
 		assertEquals(6, count2);

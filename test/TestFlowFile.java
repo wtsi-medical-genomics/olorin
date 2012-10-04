@@ -102,6 +102,56 @@ public class TestFlowFile extends TestCase {
 		assertEquals("G", new String(patCode2));
 	}
         
+        @Test public void testmultiChrFile() throws Exception {
+		flow = new FlowFile("/Users/jm20/work/workspace/Oberon_svn/test/test_files/fam88.flow");
+		MapFile map = new MapFile("/Users/jm20/work/workspace/Oberon_svn/test/test_files/fam88.map");
+		flow.setPos(map.getPositionsByChromosome());
+                flow.parseFlow();     
+                
+                HashMap<String, Sample> samples = flow.getSamplesAllChromosomes();
+                
+                // check that there are 13 samples in the hash
+                assertEquals(13, samples.size());                               
+                
+                // check that each sample has 22 chromosomes
+                for (String indID : samples.keySet()) {
+                    assertEquals(22, samples.get(indID).chr.size());
+                }
+                
+                Sample sample = samples.get("438");
+                
+                Chromosome chr1 = sample.getChr("1");
+		                              
+		int matSegNum = chr1.getMatSegNum();
+		int patSegNum = chr1.getPatSegNum();
+                
+                assertEquals(1, matSegNum);
+		assertEquals(1, patSegNum);
+		
+		Iterator<Segment> ind1Mat = chr1.getMatIt();
+		Iterator<Segment> ind1Pat = chr1.getPatIt();
+		
+		Segment ind1MatSeg1 = ind1Mat.next();
+		Segment ind1PatSeg1 = ind1Pat.next();
+		
+		int matStart = ind1MatSeg1.getStart();
+		int matEnd   = ind1MatSeg1.getEnd();
+		String matCode = new String(ind1MatSeg1.getCode());
+		
+		int patStart = ind1PatSeg1.getStart();
+		int patEnd   = ind1PatSeg1.getEnd();
+		String patCode = new String(ind1PatSeg1.getCode());
+				
+		assertEquals(1111657, matStart);
+		assertEquals(247093596, matEnd);
+		assertEquals("C", matCode);
+		
+		assertEquals(1111657, patStart);
+		assertEquals(247093596, patEnd);
+		assertEquals("D", patCode);
+	}
+        
+        
         // test that the right exceptions are thrown with bad data
         // eg vertical format data, empty file
         
