@@ -48,18 +48,16 @@ public class TestVariant extends TestCase {
         assertEquals("rs6054257", var.getTableArray().get(2));
         assertEquals("G", var.getTableArray().get(3));
         assertEquals("A", var.getTableArray().get(4));
-        assertEquals("29", var.getTableArray().get(5));
-        assertEquals("PASS", var.getTableArray().get(6));
         //Genotypes
-        assertEquals("G G", var.getTableArray().get(7));
-        assertEquals("A G", var.getTableArray().get(8));
-        assertEquals("A A", var.getTableArray().get(9));
+        assertEquals("G G", var.getTableArray().get(5));
+        assertEquals("A G", var.getTableArray().get(6));
+        assertEquals("A A", var.getTableArray().get(7));
         //Info fields        
-        assertEquals("3", var.getTableArray().get(10));
-        assertEquals("14", var.getTableArray().get(11));
-        assertEquals("0.5", var.getTableArray().get(12));
-        assertEquals("TRUE", var.getTableArray().get(13));
-        assertEquals("TRUE", var.getTableArray().get(14));
+        assertEquals("3", var.getTableArray().get(8));
+        assertEquals("14", var.getTableArray().get(9));
+        assertEquals("0.5", var.getTableArray().get(10));
+        assertEquals("TRUE", var.getTableArray().get(11));
+        assertEquals("TRUE", var.getTableArray().get(12));
     }
 
     @Test
@@ -72,18 +70,17 @@ public class TestVariant extends TestCase {
         assertEquals(".", var.getTableArray().get(2));
         assertEquals("T", var.getTableArray().get(3));
         assertEquals("A", var.getTableArray().get(4));
-        assertEquals("3", var.getTableArray().get(5));
-        assertEquals("q10", var.getTableArray().get(6));
+       
         //Genotypes
+        assertEquals("T T", var.getTableArray().get(5));
+        assertEquals("T A", var.getTableArray().get(6));
         assertEquals("T T", var.getTableArray().get(7));
-        assertEquals("T A", var.getTableArray().get(8));
-        assertEquals("T T", var.getTableArray().get(9));
         //Info fields        
-        assertEquals("3", var.getTableArray().get(10));
-        assertEquals("11", var.getTableArray().get(11));
-        assertEquals("0.017", var.getTableArray().get(12));
-        assertEquals(null, var.getTableArray().get(13));
-        assertEquals(null, var.getTableArray().get(14));
+        assertEquals("3", var.getTableArray().get(8));
+        assertEquals("11", var.getTableArray().get(9));
+        assertEquals("0.017", var.getTableArray().get(10));
+        assertEquals(null, var.getTableArray().get(11));
+        assertEquals(null, var.getTableArray().get(12));
     }
 
     @Test
@@ -96,18 +93,17 @@ public class TestVariant extends TestCase {
         assertEquals("rs6040355", var.getTableArray().get(2));
         assertEquals("A", var.getTableArray().get(3));
         assertEquals("G,T", var.getTableArray().get(4));
-        assertEquals("67", var.getTableArray().get(5));
-        assertEquals("PASS", var.getTableArray().get(6));
+        
         //Genotypes
-        assertEquals("G T", var.getTableArray().get(7));
-        assertEquals("T G", var.getTableArray().get(8));
-        assertEquals("T T", var.getTableArray().get(9));
+        assertEquals("G T", var.getTableArray().get(5));
+        assertEquals("T G", var.getTableArray().get(6));
+        assertEquals("T T", var.getTableArray().get(7));
         //Info fields        
-        assertEquals("2", var.getTableArray().get(10));
-        assertEquals("10", var.getTableArray().get(11));
-        assertEquals("0.333,0.667", var.getTableArray().get(12));
-        assertEquals("TRUE", var.getTableArray().get(13));
-        assertEquals(null, var.getTableArray().get(14));
+        assertEquals("2", var.getTableArray().get(8));
+        assertEquals("10", var.getTableArray().get(9));
+        assertEquals("0.333,0.667", var.getTableArray().get(10));
+        assertEquals("TRUE", var.getTableArray().get(11));
+        assertEquals(null, var.getTableArray().get(12));
     }
 
     @Test
@@ -120,43 +116,41 @@ public class TestVariant extends TestCase {
         assertEquals(".", var.getTableArray().get(2));
         assertEquals("T", var.getTableArray().get(3));
         assertEquals(".", var.getTableArray().get(4));
-        assertEquals("47", var.getTableArray().get(5));
-        assertEquals("PASS", var.getTableArray().get(6));
+        
         //Genotypes
+        assertEquals("T T", var.getTableArray().get(5));
+        assertEquals("T T", var.getTableArray().get(6));
         assertEquals("T T", var.getTableArray().get(7));
-        assertEquals("T T", var.getTableArray().get(8));
-        assertEquals("T T", var.getTableArray().get(9));
         //Info fields        
-        assertEquals("3", var.getTableArray().get(10));
-        assertEquals("13", var.getTableArray().get(11));
+        assertEquals("3", var.getTableArray().get(8));
+        assertEquals("13", var.getTableArray().get(9));
+        assertEquals(null, var.getTableArray().get(10));
+        assertEquals(null, var.getTableArray().get(11));
         assertEquals(null, var.getTableArray().get(12));
-        assertEquals(null, var.getTableArray().get(13));
-        assertEquals(null, var.getTableArray().get(14));
     }
     
     public void testVariant5() throws Exception {
         // SNP with a Sanger CSQ string
         String csqType = "SANGER";
         String var5 = "1\t1574076\trs9442413\tG\tA\t133.37\tPASS\tAC=1;AF=0.50;AF_AFR=0.054878;AF_AMR=0.279006;AF_ASN=0.159091;AF_EUR=0.318898;AF_MAX=0.318898;AN=2;BaseQRankSum=-1.704;CSQ=ENST00000317673:ENSG00000248333:WITHIN_NON_CODING_GENE,INTRONIC+ENST00000340677:ENSG00000248333:WITHIN_NON_CODING_GENE,INTRONIC+ENST00000341832:ENSG00000248333:WITHIN_NON_CODING_GENE,INTRONIC+ENST00000356026:MMP23B:DOWNSTREAM+ENST00000378675:MMP23B:DOWNSTREAM+ENST00000407249:ENSG00000248333:WITHIN_NON_CODING_GENE,INTRONIC+ENST00000412415:MMP23B:DOWNSTREAM+ENST00000435358:MMP23B:DOWNSTREAM+ENST00000479814:MMP23B:DOWNSTREAM+ENST00000486400:MMP23B:DOWNSTREAM+ENST00000489782:MMP23B:DOWNSTREAM+ENST00000490017:MMP23B:DOWNSTREAM+ENST00000503792:MMP23B:DOWNSTREAM+ENST00000512731:MMP23B:DOWNSTREAM+ENST00000513088:ENSG00000248333:WITHIN_NON_CODING_GENE,INTRONIC+GERP,-0.29;DB;DP=24;Dels=0.00;FS=5.166;HRun=0;HaplotypeScore=2.4820;MQ0=0;MQ=30.87;MQRankSum=-0.033;QD=5.56;ReadPosRankSum=1.102;SB=-24.67;SF=0;VQSLOD=6.8457;culprit=MQRankSum;dbSNP=119\tGT:GQ:DP:PL:AD\t1/1:99:24:163,0,454:16,8\t.\t.";
-        Variant var = new Variant(var5, selectedCols, selectedInds);
+        Variant var = new Variant(var5, selectedCols, selectedInds, csqType);
 
         assertEquals(1, var.getTableArray().get(0));
         assertEquals(1574076, var.getTableArray().get(1));
         assertEquals("rs9442413", var.getTableArray().get(2));
         assertEquals("G", var.getTableArray().get(3));
         assertEquals("A", var.getTableArray().get(4));
-        assertEquals("133.37", var.getTableArray().get(5));
-        assertEquals("PASS", var.getTableArray().get(6));
+        
         //Genotypes
-        assertEquals("A A", var.getTableArray().get(7));
-        assertEquals("G G", var.getTableArray().get(8));
-        assertEquals("G G", var.getTableArray().get(9));
+        assertEquals("A A", var.getTableArray().get(5));
+        assertEquals("G G", var.getTableArray().get(6));
+        assertEquals("G G", var.getTableArray().get(7));
         //Info fields        
-        assertEquals(null, var.getTableArray().get(10));
-        assertEquals("24", var.getTableArray().get(11));
-        assertEquals("0.50", var.getTableArray().get(12));
-        assertEquals("TRUE", var.getTableArray().get(13));
-        assertEquals(null, var.getTableArray().get(14));
+        assertEquals(null, var.getTableArray().get(8));
+        assertEquals("24", var.getTableArray().get(9));
+        assertEquals("0.50", var.getTableArray().get(10));
+        assertEquals("TRUE", var.getTableArray().get(11));
+        assertEquals(null, var.getTableArray().get(12));
         // CSQ fields       
         ArrayList<VariantEffect> variantEffects = var.getVariantEffects();
         VariantEffect ve = var.getMostDamagingEffect(variantEffects);
@@ -185,21 +179,20 @@ public class TestVariant extends TestCase {
         vcfMeta.add(csqMeta);
         String csqType = vcfMeta.getCsqType();
         HashMap csqFormat = vcfMeta.getCsqIndex();
-        Variant var = new Variant(var6, selectedCols, selectedInds, csqFormat);
+        Variant var = new Variant(var6, selectedCols, selectedInds, csqType, csqFormat);
 
         assertEquals(1, var.getTableArray().get(0));
         assertEquals(50666515, var.getTableArray().get(1));
         assertEquals("rs2494876", var.getTableArray().get(2));
         assertEquals("C", var.getTableArray().get(3));
         assertEquals("T", var.getTableArray().get(4));
-        assertEquals("2228.51", var.getTableArray().get(5));
-        assertEquals("PASS", var.getTableArray().get(6));
+        
         //Genotypes
-        assertEquals("C T", var.getTableArray().get(7));
-        assertEquals("T T", var.getTableArray().get(8));
-        assertEquals("T T", var.getTableArray().get(9));
+        assertEquals("C T", var.getTableArray().get(5));
+        assertEquals("T T", var.getTableArray().get(6));
+        assertEquals("T T", var.getTableArray().get(7));
         //Info fields        
-        assertEquals("0.50", var.getTableArray().get(12));
+        assertEquals("0.50", var.getTableArray().get(10));
 
         ArrayList<VariantEffect> variantEffects = var.getVariantEffects(csqFormat);
         VariantEffect ve = var.getMostDamagingEffect(variantEffects);
@@ -216,5 +209,25 @@ public class TestVariant extends TestCase {
         assertEquals("0.54", ve.getSiftScore());
         assertEquals(null, ve.getGranthamScore());
         assertEquals(3, ve.getDamageScore());
+    }
+    
+    public void testVariant7() throws Exception {
+        // SNP with no CSQ string
+        String varStr = "1\t50666515\trs2494876\tC\tT\t2228.51\tPASS\tAC=8;AF=0.50;AF_AFR=0.373984;AF_AMR=0.886740;AF_ASN=0.650350;AF_EUR=0.893701;AF_MAX=0.893701;AN=10;BaseQRankSum=-4.455\tGT:GQ:DP:PL:AD\t0/1:99:133:1493,0,2231:76,56\t1/1:99:69:2271,187,0:0,68\t1/1:99:79:2659,217,0:0,79\t0/1:99:101:1647,0,1375:46,55\t1/1:99:91:3231,253,0:0,91";
+      
+        Variant var = new Variant(varStr, selectedCols, selectedInds);
+
+        assertEquals(1, var.getTableArray().get(0));
+        assertEquals(50666515, var.getTableArray().get(1));
+        assertEquals("rs2494876", var.getTableArray().get(2));
+        assertEquals("C", var.getTableArray().get(3));
+        assertEquals("T", var.getTableArray().get(4));
+        
+        //Genotypes
+        assertEquals("C T", var.getTableArray().get(5));
+        assertEquals("T T", var.getTableArray().get(6));
+        assertEquals("T T", var.getTableArray().get(7));
+        //Info fields        
+        assertEquals("0.50", var.getTableArray().get(10));
     }
 }
