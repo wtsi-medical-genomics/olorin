@@ -11,8 +11,9 @@ import java.util.HashMap;
 
 public class TestVCF extends TestCase {
 
+    private VCF vcfSanger;
+    private VCF vcfVep;
     private VCF vcf;
-    private VCF vepVcf;
     private Collection<SegmentMatch> matches;
     private ArrayList<String> selectedCols;
     private ArrayList<String> selectedInds;
@@ -23,10 +24,11 @@ public class TestVCF extends TestCase {
 
     @Before
     @Override
-    public void setUp() throws Exception {
-
-        vcf = new VCF("/Users/jm20/work/workspace/Oberon_svn/test/test_files/test3.vcf.gz");
-        
+    public void setUp() throws Exception {        
+        // VCF with no CSQ
+        vcf = new VCF("/Users/jm20/work/workspace/Oberon_svn/test/test_files/plain.vcf.gz");
+        vcfVep = new VCF("/Users/jm20/work/workspace/Oberon_svn/test/test_files/vep.vcf.gz");
+        vcfSanger = new VCF("/Users/jm20/work/workspace/Oberon_svn/test/test_files/sanger.vcf.gz");        
         selectedCols = new ArrayList<String>();
         
         // Ids in the test vcf file
@@ -79,42 +81,77 @@ public class TestVCF extends TestCase {
     }
 
     @Test
+    public void testCsqType() throws Exception {
+        assertEquals(null, vcf.getMeta().getCsqType());
+        assertEquals("VEP", vcfVep.getMeta().getCsqType());
+        assertEquals("SANGER", vcfSanger.getMeta().getCsqType());
+    }
+    
+    
+    @Test
     public void testMissingVariants() throws Exception {
+        
         ArrayList<Variant> vcfData = vcf.getVariants(emptySegs, 3, selectedCols, "any", selectedInds, null);
-        assertEquals(0, vcfData.size());        
+        ArrayList<Variant> vcfDataVep = vcfVep.getVariants(emptySegs, 3, selectedCols, "any", selectedInds, null);
+        ArrayList<Variant> vcfDataSanger = vcfSanger.getVariants(emptySegs, 3, selectedCols, "any", selectedInds, null);        
+        assertEquals(0, vcfData.size());
+        assertEquals(0, vcfDataVep.size());
+        assertEquals(0, vcfDataSanger.size());
     }
     
     @Test
     public void testGetAnyVariants() throws Exception {
         ArrayList<Variant> vcfData = vcf.getVariants(segs, 3, selectedCols, "any", selectedInds, null);
+        ArrayList<Variant> vcfDataVep = vcfVep.getVariants(segs, 3, selectedCols, "any", selectedInds, null);
+        ArrayList<Variant> vcfDataSanger = vcfSanger.getVariants(segs, 3, selectedCols, "any", selectedInds, null);
         assertEquals(10, vcfData.size());
+        assertEquals(10, vcfDataVep.size());
+        assertEquals(10, vcfDataSanger.size());
     }
     
     @Test
     public void testGetAllVariants() throws Exception {
         ArrayList<Variant> vcfData = vcf.getVariants(segs, 3, selectedCols, "all", selectedInds, null);
+        ArrayList<Variant> vcfDataVep = vcfVep.getVariants(segs, 3, selectedCols, "all", selectedInds, null);
+        ArrayList<Variant> vcfDataSanger = vcfSanger.getVariants(segs, 3, selectedCols, "all", selectedInds, null);
         assertEquals(1, vcfData.size());
+        assertEquals(1, vcfDataVep.size());
+        assertEquals(1, vcfDataSanger.size());
     }
     
     @Test
     public void testGetSelectedVariants() throws Exception {
         ArrayList<Variant> vcfData = vcf.getVariants(segs, 3, selectedCols, "selected", selectedInds, null);
+        ArrayList<Variant> vcfDataVep = vcfVep.getVariants(segs, 3, selectedCols, "selected", selectedInds, null);
+        ArrayList<Variant> vcfDataSanger = vcfSanger.getVariants(segs, 3, selectedCols, "selected", selectedInds, null);
         assertEquals(2, vcfData.size());
+        assertEquals(2, vcfDataVep.size());
+        assertEquals(2, vcfDataSanger.size());
     }
     
     @Test
     public void testRemoveDuplicates() throws Exception {       
         ArrayList<Variant> vcfData = vcf.getVariants(dupSegs, 3, selectedCols, "any", selectedInds, null);
+        ArrayList<Variant> vcfDataVep = vcfVep.getVariants(dupSegs, 3, selectedCols, "any", selectedInds, null);
+        ArrayList<Variant> vcfDataSanger = vcfSanger.getVariants(dupSegs, 3, selectedCols, "any", selectedInds, null);
         assertEquals(15, vcfData.size());
+        assertEquals(15, vcfDataVep.size());
+        assertEquals(15, vcfDataSanger.size());
     }
     
     // test that only vars are retrieved from segments where at leat one of the inds in the segment is sequenced and selected
     @Test
     public void testGetFilteredVariants() throws Exception {
         ArrayList<Variant> vcfData = vcf.getVariants(selectedSegs, 3, selectedCols, "selected", selectedInds, null);
+        ArrayList<Variant> vcfDataVep = vcfVep.getVariants(selectedSegs, 3, selectedCols, "selected", selectedInds, null);
+        ArrayList<Variant> vcfDataSanger = vcfSanger.getVariants(selectedSegs, 3, selectedCols, "selected", selectedInds, null);
         assertEquals(0, vcfData.size());
+        assertEquals(0, vcfDataVep.size());
+        assertEquals(0, vcfDataSanger.size());
     }
     
     // testing filtering by frequency? - is this a feature we want to continue with or should we rely on the vcf or query the 1000g website?
+    
+    //test where the variant is not found in the frq file
     
 }
