@@ -11,7 +11,7 @@ public class TestVCFMeta extends TestCase {
 
     @Before
     public void setUp() throws Exception {
-        // load exmaple data taken from the 1000g site
+        // exmaple data taken from the 1000g site
         metaInfo.add("##fileformat=VCFv4.1");
         metaInfo.add("##fileDate=20090805");
         metaInfo.add("##source=myImputationProgramV3.1");
@@ -42,11 +42,11 @@ public class TestVCFMeta extends TestCase {
     // not bothering with date,source,reference file,contig and phasing at the moment
     @Test
     public void testINFO() throws Exception {
-        assertEquals(7, metaInfo.getInfo().size());
-        assertEquals("NS", metaInfo.getInfo().get(0).get("ID"));
-        assertEquals("1", metaInfo.getInfo().get(0).get("Number"));
-        assertEquals("Integer", metaInfo.getInfo().get(0).get("Type"));
-        assertEquals("Number of Samples With Data", metaInfo.getInfo().get(0).get("Description"));
+        assertEquals(9, metaInfo.getInfo().size());
+        assertEquals("NS", metaInfo.getInfo().get(2).get("ID"));
+        assertEquals("1", metaInfo.getInfo().get(2).get("Number"));
+        assertEquals("Integer", metaInfo.getInfo().get(2).get("Type"));
+        assertEquals("Number of Samples With Data", metaInfo.getInfo().get(2).get("Description"));
         // all the other info lines
     }
 
@@ -54,25 +54,6 @@ public class TestVCFMeta extends TestCase {
     public void testCSQ() throws Exception {
         assertTrue(metaInfo.hasCSQ());
         assertEquals("SANGER", metaInfo.getCsqType());
-    }
-
-    @Test
-    public void testFILTER() throws Exception {
-        assertEquals(2, metaInfo.getFilter().size());
-        assertEquals("q10", metaInfo.getFilter().get(0).get("ID"));
-        assertEquals("Quality below 10", metaInfo.getFilter().get(0).get("Description"));
-        assertEquals("s50", metaInfo.getFilter().get(1).get("ID"));
-        assertEquals("Less than 50% of samples have data", metaInfo.getFilter().get(1).get("Description"));
-    }
-
-    @Test
-    public void testFORMAT() throws Exception {
-        assertEquals(4, metaInfo.getFormat().size());
-        assertEquals("GT", metaInfo.getFormat().get(0).get("ID"));
-        assertEquals("1", metaInfo.getFormat().get(0).get("Number"));
-        assertEquals("String", metaInfo.getFormat().get(0).get("Type"));
-        assertEquals("Genotype", metaInfo.getFormat().get(0).get("Description"));
-        // all the other format lines
     }
 
     @Test
