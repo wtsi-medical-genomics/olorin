@@ -39,106 +39,107 @@ public class DataDirectory {
         String fileName = null;
         File[] flowFiles = directory.listFiles(new ExtensionFilter(".flow"));
 
-        if (flowFiles.length > 1) {
-            // flow and map files are arranged by chromosome
+        if (flowFiles.length > 0) {
             for (File flowFile : flowFiles) {
-                String[] chunks = flowFile.getName().split("\\.");
-                if (fileName == null) {
-                    fileName = chunks[0];
-                }
-                if (knownChroms.get(chunks[1]) == null) {
-                    knownChroms.put(chunks[1], true);
-                    printLog("Found chromosome: " + chunks[1]);
+
+                if (flowFile.getName().matches("\\w+\\.\\w+\\.flow")) {
+                    // file looks like chromosome format
+                    String[] chunks = flowFile.getName().split("\\.");
+                    if (fileName == null) {
+                        fileName = chunks[0];
+                    }
+                    if (knownChroms.get(chunks[1]) == null) {
+                        knownChroms.put(chunks[1], true);
+                        printLog("Found chromosome: " + chunks[1]);
+                    }
                 }
             }
+            if (knownChroms.size() > 0) {
+                // flow and map files are arranged by chromosome
+                samples = new HashMap<String, Sample>();
 
-            samples = new HashMap<String, Sample>();
+                for (String chrom : knownChroms.keySet()) {
+                    String flowName = fileName + "." + chrom + ".flow";
+                    printLog("Trying to open .flow file: " + flowName);
+                    FlowFile flow = null;
+                    try {
+                        flow = new FlowFile(directory.getAbsolutePath() + File.separator + flowName, chrom);
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null, "Unable to Open .flow file:\n'" + flowName + "'\n'" + ex.getMessage() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    printLog("Opened .flow file: " + flowName);
 
-            for (String chrom : knownChroms.keySet()) {
-                String flowName = fileName + "." + chrom + ".flow";
+                    String mapName = fileName + "." + chrom + ".map";
+                    printLog("Trying to open .map file: " + mapName);
+                    MapFile map = null;
+                    try {
+                        map = new MapFile(directory.getAbsolutePath() + File.separator + mapName, chrom);
+                    } catch (IOException ex) {
+                        JOptionPane.showMessageDialog(null, "Unable to Open .map file:\n'" + mapName + "'\n'" + ex.getMessage() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    printLog("Open .map file: " + mapName);
+
+                    flow.setPos(map.getPositions());
+                    flow.parseFlow();
+                    HashMap<String, Chromosome> h = flow.getSamples();
+                    for (String s : h.keySet()) {
+                        if (samples.containsKey(s)) {
+                            Sample samp = samples.get(s);
+                            samp.setChr(chrom, h.get(s));
+                        } else {
+                            Sample samp = new Sample();
+                            samp.setChr(chrom, h.get(s));
+                            samples.put(s, samp);
+                        }
+                    }
+                    printLog("Parsed flow file: " + flowName);
+                    printLog("Parsed map file: " + mapName);
+                }
+            } else {
+                // single flow file found - switch to single file mode
+                printLog("Using single file input mode");
+                String flowName = flowFiles[0].getName();
+                String[] chunks = flowFiles[0].getName().split("\\.");
+                fileName = chunks[0];
+
+                // open the map file and check what chromosomes are in the file
+
+                String mapName = fileName + ".map";
+                printLog("Trying to open .map file: " + mapName);
+                MapFile map = null;
+                try {
+                    map = new MapFile(directory.getAbsolutePath() + File.separator + mapName);
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(null, "Unable to Open .map file:\n'" + mapName + "'\n'" + ex.getMessage() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                printLog("Opened .map file: " + mapName);
+
+
                 printLog("Trying to open .flow file: " + flowName);
                 FlowFile flow = null;
                 try {
-                    flow = new FlowFile(directory.getAbsolutePath() + File.separator + flowName, chrom);
+                    flow = new FlowFile(directory.getAbsolutePath() + File.separator + flowName);
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(null, "Unable to Open .flow file:\n'" + flowName + "'\n'" + ex.getMessage() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 printLog("Opened .flow file: " + flowName);
 
-                String mapName = fileName + "." + chrom + ".map";
-                printLog("Trying to open .map file: " + mapName);
-                MapFile map = null;
-                try {
-                    map = new MapFile(directory.getAbsolutePath() + File.separator + mapName, chrom);
-                } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(null, "Unable to Open .map file:\n'" + mapName + "'\n'" + ex.getMessage() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                printLog("Open .map file: " + mapName);
-
-                flow.setPos(map.getPositions());
+                flow.setPos(map.getPositionsByChromosome());
                 flow.parseFlow();
-                HashMap<String, Chromosome> h = flow.getSamples();
-                for (String s : h.keySet()) {
-                    if (samples.containsKey(s)) {
-                        Sample samp = samples.get(s);
-                        samp.setChr(chrom, h.get(s));
-                    } else {
-                        Sample samp = new Sample();
-                        samp.setChr(chrom, h.get(s));
-                        samples.put(s, samp);
-                    }
-                }
+                samples = flow.getSamplesAllChromosomes();
                 printLog("Parsed flow file: " + flowName);
                 printLog("Parsed map file: " + mapName);
             }
-
-        } else if (flowFiles.length == 1) {
-            // single flow file found - switch to single file mode
-            printLog("Using single file input mode");
-            String flowName = flowFiles[0].getName();
-            String[] chunks = flowFiles[0].getName().split("\\.");
-            fileName = chunks[0];
-
-            // open the map file and check what chromosomes are in the file
-
-            String mapName = fileName + ".map";
-            printLog("Trying to open .map file: " + mapName);
-            MapFile map = null;
-            try {
-                map = new MapFile(directory.getAbsolutePath() + File.separator + mapName);
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(null, "Unable to Open .map file:\n'" + mapName + "'\n'" + ex.getMessage() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            printLog("Opened .map file: " + mapName);
-
-
-            printLog("Trying to open .flow file: " + flowName);
-            FlowFile flow = null;
-            try {
-                flow = new FlowFile(directory.getAbsolutePath() + File.separator + flowName);
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(null, "Unable to Open .flow file:\n'" + flowName + "'\n'" + ex.getMessage() + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            printLog("Opened .flow file: " + flowName);
-
-            flow.setPos(map.getPositionsByChromosome());
-            flow.parseFlow();
-            samples = flow.getSamplesAllChromosomes();
-            printLog("Parsed flow file: " + flowName);
-            printLog("Parsed map file: " + mapName);
-
-
 
         } else {
             // no flow files found - not a valid olorin input directory
             JOptionPane.showMessageDialog(null, "No flow files found in the directory:\n'" + dir + "'", "Loading input data failed.", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
 
         String vcfName = fileName + ".vcf.gz";
         printLog("Trying to open vcf file: " + vcfName);
