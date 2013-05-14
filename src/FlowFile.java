@@ -47,7 +47,7 @@ public class FlowFile {
 
         try {
             if (singleFile) {
-                // assume chromosomes are numericaly sorted
+                // assume chromosomes are numericaly sorted starting from 1
                 Integer flowChr = 0;
                 samples = new HashMap<String, Sample>();
 
